@@ -5648,3 +5648,29 @@ body {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
+/* Desktop workspace fit for wide and 2K displays */
+@media (min-width: 1081px) {
+  .page-stack,
+  .approved-workspace {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .approved-workspace {
+    max-width: 1800px !important;
+  }
+
+  .command-center {
+    width: min(100%, 880px) !important;
+    max-width: 880px !important;
+  }
+
+  .status-strip,
+  .market-pulse-strip {
+    width: 100% !important;
+  }
+
+  .pulse-widget {
+    min-width: 0 !important;
+  }
+}
