@@ -18,32 +18,34 @@ test('desktop workspace follows the locked Bible hierarchy', async ({ page }) =>
   await expect(page.locator('.live-quote')).toHaveCount(5);
   await expect(page.locator('.approved-nav button')).toHaveCount(9);
   await expect(page.locator('.connection-badge')).toHaveCount(0);
-  await expect(page.locator('.language-switch')).toBeVisible();
+  await expect(page.locator('.language-switch')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Notifications' })).toHaveCount(0);
+  await expect(page.locator('.premium-badge')).toBeVisible();
+  await expect(page.locator('.profile-pill')).toBeVisible();
 
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
-  expect(overflow).toBe(false);
-  await expect(page.locator('.app-shell')).toHaveClass(/sidebar-expanded/);
-  expect(Math.round((await page.locator('.approved-sidebar').boundingBox()).width)).toBe(252);
-  await expect(page.locator('.approved-nav button').first().locator('span')).toBeVisible();
-  expect((await page.locator('.approved-nav').boundingBox()).width).toBeGreaterThan(200);
-
-  await page.locator('[data-ui-language="zh"]').click();
-  await expect(page.locator('.approved-nav button').first()).toHaveAccessibleName('工作空间');
-  await expect(page.locator('.bible-greeting p')).toContainText(/早上好|下午好|晚上好/);
-  await expect(page.locator('[data-ui-language="zh"]')).toHaveClass(/active/);
-  await page.locator('[data-ui-language="en"]').click();
-  await expect(page.locator('.approved-nav button').first()).toHaveAccessibleName('Workspace');
-
-  await page.screenshot({ path: 'artifacts/workspace-desktop.png', fullPage: false });
-  await page.screenshot({ path: 'artifacts/sidebar-desktop.png', fullPage: false });
-
-  await page.getByRole('button', { name: 'Ask JARVIS' }).click();
-  await expect(page.locator('.ask-page')).toBeVisible();
-  await page.getByRole('button', { name: 'Collapse navigation' }).click();
+  const layout = await page.evaluate(() => ({
+    overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    earth: getComputedStyle(document.body, '::before').backgroundImage.includes('earth-horizon'),
+  }));
+  expect(layout.overflow).toBe(false);
+  expect(layout.earth).toBe(true);
   await expect(page.locator('.app-shell')).not.toHaveClass(/sidebar-expanded/);
+  expect(Math.round((await page.locator('.approved-sidebar').boundingBox()).width)).toBe(76);
+  expect(Math.round((await page.locator('.jarvis-question-form').boundingBox()).height)).toBeGreaterThanOrEqual(100);
+  await page.screenshot({ path: 'artifacts/workspace-desktop.png', fullPage: false });
+
   await page.getByRole('button', { name: 'Expand navigation' }).click();
   await expect(page.locator('.app-shell')).toHaveClass(/sidebar-expanded/);
-  await page.screenshot({ path: 'artifacts/ask-jarvis-desktop.png', fullPage: true });
+  await page.waitForTimeout(400);
+  expect(Math.round((await page.locator('.approved-sidebar').boundingBox()).width)).toBe(252);
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(page.locator('.settings-language-control')).toBeVisible();
+  await page.locator('[data-settings-language="zh"]').click();
+  expect(await page.evaluate(() => localStorage.getItem('jarvis-ui-language'))).toBe('zh');
+  await page.locator('[data-settings-language="en"]').click();
+  await page.getByRole('button', { name: 'Collapse navigation' }).click();
+  await expect(page.locator('.app-shell')).not.toHaveClass(/sidebar-expanded/);
+  await page.screenshot({ path: 'artifacts/settings-language-desktop.png', fullPage: false });
 });
 
 test('mobile workspace has no overflow and the drawer opens and closes', async ({ page }) => {

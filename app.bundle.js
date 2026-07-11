@@ -1543,7 +1543,7 @@
 			isProcessing: false
 		},
 		approvedUi: {
-			sidebarExpanded: true,
+			sidebarExpanded: false,
 			marketFilter: "All",
 			opportunityFilter: "All",
 			analysisMode: "Chart Analysis",
@@ -3408,13 +3408,7 @@
     <div class="topbar-actions">
       <button class="mobile-nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false">${lineIcon("menu")}</button>
       <span class="premium-badge">Premium</span>
-      <div class="language-switch" role="group" aria-label="Language">
-        <button type="button" data-ui-language="en" class="${isZh ? "" : "active"}" aria-pressed="${!isZh}">EN</button>
-        <span>/</span>
-        <button type="button" data-ui-language="zh" class="${isZh ? "active" : ""}" aria-pressed="${isZh}">CN</button>
-      </div>
-      <button type="button" aria-label="Notifications">${lineIcon("bell")}<i></i></button>
-      <div class="profile-pill" title="${mockUser.name}"><span>${mockUser.name.slice(0, 1).toUpperCase()}</span><b>${mockUser.name}</b></div>
+      <div class="profile-pill" title="${mockUser.name}" aria-label="${mockUser.name}"><span>${mockUser.name.slice(0, 1).toUpperCase()}</span></div>
     </div>
   `;
 		bar.querySelector(".mobile-nav-toggle")?.addEventListener("click", (event) => {
@@ -3423,16 +3417,6 @@
 			shellElement?.classList.toggle("mobile-nav-open", isOpen);
 			document.body.classList.toggle("nav-open", isOpen);
 			event.currentTarget.setAttribute("aria-expanded", String(isOpen));
-		});
-		bar.querySelectorAll("[data-ui-language]").forEach((button) => {
-			button.addEventListener("click", () => {
-				const language = button.dataset.uiLanguage === "zh" ? "zh" : "en";
-				if (state.jarvis.language === language) return;
-				state.jarvis.language = language;
-				state.jarvis.conversationState.language = language;
-				localStorage.setItem("jarvis-ui-language", language);
-				renderFromTop();
-			});
 		});
 		return bar;
 	}
@@ -3743,6 +3727,7 @@
 	}
 	function settingsPageContent() {
 		const activeTab = state.approvedUi.settingsTab;
+		const isZh = state.jarvis.language === "zh";
 		return `
     <section class="approved-workspace">
       <div class="approved-page-head"><div><h1>Settings</h1><p>Manage your preferences</p></div></div>
@@ -3759,8 +3744,8 @@
 			["Email", `${mockUser.name.toLowerCase()}@apex.local`],
 			["Account", "Premium Member"]
 		])}
-        ${settingsCard("Preferences", [
-			["Language", "English"],
+        ${settingsCard("General", [
+			["Language", `<div class="settings-language-control" role="group" aria-label="Language"><button type="button" data-settings-language="en" class="${isZh ? "" : "active"}">English</button><button type="button" data-settings-language="zh" class="${isZh ? "active" : ""}">中文</button></div>`],
 			["Timezone", "Asia/Kuala_Lumpur"],
 			["Default Asset", "XAUUSD"],
 			["Default Timeframe", "H1"]
@@ -3818,6 +3803,15 @@
 					state.approvedUi[stateKey] = button.dataset[dataKey];
 					render();
 				});
+			});
+		});
+		page.querySelectorAll("[data-settings-language]").forEach((button) => {
+			button.addEventListener("click", () => {
+				const language = button.dataset.settingsLanguage === "zh" ? "zh" : "en";
+				state.jarvis.language = language;
+				state.jarvis.conversationState.language = language;
+				localStorage.setItem("jarvis-ui-language", language);
+				renderFromTop();
 			});
 		});
 	}
