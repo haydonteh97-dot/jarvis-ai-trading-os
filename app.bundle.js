@@ -1542,6 +1542,7 @@
 			isProcessing: false
 		},
 		approvedUi: {
+			sidebarExpanded: false,
 			marketFilter: "All",
 			opportunityFilter: "All",
 			analysisMode: "Chart Analysis",
@@ -1641,7 +1642,7 @@
 			state.role = "user";
 			state.activePage = "Home";
 		}
-		const layout = el("div", "app-shell");
+		const layout = el("div", `app-shell${state.approvedUi.sidebarExpanded ? " sidebar-expanded" : ""}`);
 		layout.appendChild(sidebar());
 		const mobileBackdrop = el("button", "mobile-nav-backdrop");
 		mobileBackdrop.type = "button";
@@ -3106,19 +3107,14 @@
 			icon: "message"
 		},
 		{
-			label: "Market Radar",
-			page: "MarketRadar",
-			icon: "radar"
-		},
-		{
 			label: "AI Analysis",
 			page: "AIAnalysis",
 			icon: "analysis"
 		},
 		{
-			label: "Opportunity Scanner",
-			page: "OpportunityScanner",
-			icon: "scanner"
+			label: "Upload Chart",
+			page: "UploadChart",
+			icon: "upload"
 		},
 		{
 			label: "Macro Intelligence",
@@ -3126,19 +3122,19 @@
 			icon: "macro"
 		},
 		{
-			label: "Economic Calendar",
+			label: "News & Events",
 			page: "Calendar",
 			icon: "calendar"
+		},
+		{
+			label: "Opportunity Scanner",
+			page: "OpportunityScanner",
+			icon: "scanner"
 		},
 		{
 			label: "Trade Planner",
 			page: "TradePlanner",
 			icon: "planner"
-		},
-		{
-			label: "Risk Center",
-			page: "RiskCenter",
-			icon: "risk"
 		},
 		{
 			label: "Settings",
@@ -3342,6 +3338,7 @@
     <div class="brand-lockup approved-brand">
       <div class="brand-mark">J</div>
       <div><p>JARVIS</p><span>AI TRADING OS</span></div>
+      <button class="sidebar-collapse-toggle" type="button" aria-label="${state.approvedUi.sidebarExpanded ? "Collapse" : "Expand"} navigation" aria-expanded="${state.approvedUi.sidebarExpanded}">${lineIcon("menu")}</button>
       <button class="mobile-nav-close" type="button" aria-label="Close navigation">${lineIcon("close")}</button>
     </div>
     <nav class="approved-nav"></nav>
@@ -3364,6 +3361,13 @@
 			});
 			nav.appendChild(button);
 		});
+		side.querySelector(".sidebar-collapse-toggle")?.addEventListener("click", () => {
+			state.approvedUi.sidebarExpanded = !state.approvedUi.sidebarExpanded;
+			document.querySelector(".app-shell")?.classList.toggle("sidebar-expanded", state.approvedUi.sidebarExpanded);
+			const toggle = document.querySelector(".sidebar-collapse-toggle");
+			toggle?.setAttribute("aria-expanded", String(state.approvedUi.sidebarExpanded));
+			toggle?.setAttribute("aria-label", `${state.approvedUi.sidebarExpanded ? "Collapse" : "Expand"} navigation`);
+		});
 		const adminSwitch = side.querySelector(".admin-switch");
 		if (adminSwitch) adminSwitch.addEventListener("click", () => {
 			if (!state.isAdminUser) return;
@@ -3381,15 +3385,16 @@
 		const bar = el("header", "topbar approved-topbar");
 		const title = pageTitle();
 		bar.innerHTML = `
-    <div>
+    <div class="topbar-title">
       <p>${state.role === "admin" ? "Master Workspace" : "AI Trading Operation Platform"}</p>
       <h2>${title}</h2>
     </div>
     <div class="topbar-actions">
       <button class="mobile-nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false">${lineIcon("menu")}</button>
-      <button type="button" aria-label="Search">${lineIcon("search")}</button>
+      <span class="premium-badge">Premium</span>
+      <span class="connection-badge"><i></i>MT5 Connected</span>
       <button type="button" aria-label="Notifications">${lineIcon("bell")}<i></i></button>
-      <div class="profile-pill"><span>${mockUser.name.slice(0, 1).toUpperCase()}</span>${mockUser.name}</div>
+      <div class="profile-pill" title="${mockUser.name}"><span>${mockUser.name.slice(0, 1).toUpperCase()}</span><b>${mockUser.name}</b></div>
     </div>
   `;
 		bar.querySelector(".mobile-nav-toggle")?.addEventListener("click", (event) => {
@@ -3408,6 +3413,7 @@
 		if (state.activePage === "JARVIS") return jarvisPageContent(brain);
 		if (state.activePage === "MarketRadar") return marketRadarPageContent();
 		if (state.activePage === "AIAnalysis") return aiAnalysisPageContent(brain);
+		if (state.activePage === "UploadChart") return aiAnalysisPageContent(brain);
 		if (state.activePage === "OpportunityScanner") return opportunityScannerPageContent();
 		if (state.activePage === "Macro") return macroIntelligencePageContent();
 		if (state.activePage === "Calendar") return economicCalendarPageContent();
@@ -3418,34 +3424,39 @@
 	}
 	function homePageContent(brain) {
 		return `
-    <section class="approved-workspace">
-      <div class="approved-page-head">
-        <div>
-          <h1>${timeGreeting()}, ${mockUser.name}</h1>
-          <p>Your AI Trading Operation Platform</p>
-        </div>
-      </div>
-      ${missionStatusStrip(brain)}
-      <section class="command-center">
-        <p>How can JARVIS help you today?</p>
-        ${approvedCommandBar("Ask JARVIS anything about the market...", "home")}
-        <div class="quick-action-grid approved-quick-actions">
+    <section class="approved-workspace workspace-command-center bible-home">
+      <header class="bible-greeting">
+        <p>${timeGreeting()},</p>
+        <h1>${mockUser.name}</h1>
+        <span>Your AI Trading Operation Platform</span>
+      </header>
+      <section class="bible-command-hero">
+        ${approvedCommandBar("Ask JARVIS anything...", "home")}
+        <div class="bible-suggestions">
           ${[
-			"Analyse Gold",
-			"Upload Chart",
-			"Market Overview",
-			"Macro News",
-			"Find Opportunities"
-		].map((item) => `<button type="button" data-quick-prompt="${item}">${lineIcon("spark")}${item}</button>`).join("")}
+			"Can I buy Gold now?",
+			"What is the CPI forecast?",
+			"Analyze this chart",
+			"Latest news on Fed",
+			"Upload my chart",
+			"Find trading opportunities"
+		].map((item) => `<button type="button" data-quick-prompt="${item}">${item}</button>`).join("")}
         </div>
       </section>
-      <section class="market-pulse-strip">
-        ${marketPulseWidget("XAUUSD", "2,362.45", "+0.64%", "up")}
-        ${marketPulseWidget("BTCUSD", "67,250.00", "+1.48%", "up")}
-        ${marketPulseWidget("DXY", "105.42", "+0.28%", "up")}
-        ${marketPulseWidget("Next Event", "CPI m/m", "High impact", "warn")}
-        ${marketPulseWidget("Fear & Greed", "62", "Greed", "neutral")}
+      <section class="bible-live-strip" aria-label="Live quotes">
+        <div class="live-label"><i></i>LIVE</div>
+        ${[
+			"XAUUSD",
+			"EURUSD",
+			"DXY",
+			"BTCUSD",
+			"USOIL"
+		].map((symbol) => `<div class="live-quote"><strong>${symbol}</strong><span>Awaiting verified feed</span></div>`).join("")}
       </section>
+      <blockquote class="daily-quote">
+        <p>“Discipline is the bridge between goals and accomplishment.”</p>
+        <cite>— JARVIS</cite>
+      </blockquote>
     </section>
   `;
 	}
@@ -3809,17 +3820,6 @@
 		bindMasterChatActions(page);
 		return page;
 	}
-	function missionStatusStrip(brain) {
-		return `
-    <section class="status-strip">
-      ${statusItem("AI Engine", "Online", "success")}
-      ${statusItem("Market Session", brain.dailyBriefing.session, "info")}
-      ${statusItem("Macro Risk", brain.dailyBriefing.risk, "warning")}
-      ${statusItem("Last Update", brain.dailyBriefing.lastUpdated, "info")}
-      ${statusItem("Connected", "MT5", "info")}
-    </section>
-  `;
-	}
 	function approvedCommandBar(placeholder, mode) {
 		return `
     <article class="jarvis-mentor approved-command-bar">
@@ -3827,7 +3827,6 @@
         <span>${lineIcon("spark")}</span>
         <textarea id="jarvisQuestion" rows="1" placeholder="${placeholder}">${state.jarvis.question}</textarea>
         <div class="jarvis-actions">
-          <button class="ghost-button shortcut" type="button">⌘ K</button>
           <button class="ghost-button" type="button" disabled>${lineIcon("mic")}</button>
           <button type="submit">${lineIcon("send")}</button>
         </div>
@@ -3906,12 +3905,6 @@
       <span class="tp-ref">TP</span>
     </div>
   `;
-	}
-	function marketPulseWidget(asset, value, detail, tone) {
-		return `<article class="pulse-widget ${tone}"><div><strong>${asset}</strong><span>${detail}</span></div><b>${value}</b>${miniSparkline(tone !== "warn")}</article>`;
-	}
-	function statusItem(label, value, tone) {
-		return `<div class="status-item ${tone}"><span>${label}</span><b>${value}</b></div>`;
 	}
 	function statusBadge(value) {
 		return `<span class="status-badge ${String(value).toLowerCase().includes("high") || String(value).toLowerCase().includes("invalid") ? "danger" : String(value).toLowerCase().includes("wait") || String(value).toLowerCase().includes("medium") ? "warning" : "success"}">${value}</span>`;
