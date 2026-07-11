@@ -10,13 +10,14 @@ async function login(page) {
 }
 
 test('desktop workspace follows the locked Bible hierarchy', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.setViewportSize({ width: 1024, height: 900 });
   await login(page);
 
   await expect(page.locator('.bible-home > *')).toHaveCount(4);
   await expect(page.locator('.bible-suggestions button')).toHaveCount(6);
   await expect(page.locator('.live-quote')).toHaveCount(5);
   await expect(page.locator('.approved-nav button')).toHaveCount(9);
+  await expect(page.locator('.connection-badge')).toHaveText('MT5 Offline');
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   expect(overflow).toBe(false);
@@ -26,12 +27,14 @@ test('desktop workspace follows the locked Bible hierarchy', async ({ page }) =>
   await expect(page.locator('.app-shell')).toHaveClass(/sidebar-expanded/);
   await page.waitForTimeout(400);
   expect(Math.round((await page.locator('.approved-sidebar').boundingBox()).width)).toBe(252);
-
-  await page.getByRole('button', { name: 'Collapse navigation' }).click();
-  await expect(page.locator('.app-shell')).not.toHaveClass(/sidebar-expanded/);
+  await expect(page.locator('.approved-nav button').first().locator('span')).toBeVisible();
+  expect((await page.locator('.approved-nav').boundingBox()).width).toBeGreaterThan(200);
+  await page.screenshot({ path: 'artifacts/sidebar-desktop.png', fullPage: false });
 
   await page.getByRole('button', { name: 'Ask JARVIS' }).click();
   await expect(page.locator('.ask-page')).toBeVisible();
+  await page.getByRole('button', { name: 'Collapse navigation' }).click();
+  await expect(page.locator('.app-shell')).not.toHaveClass(/sidebar-expanded/);
   await page.screenshot({ path: 'artifacts/ask-jarvis-desktop.png', fullPage: true });
 });
 

@@ -6953,3 +6953,29 @@ a:focus-visible {
 .approved-chat-input textarea::placeholder {
   color: var(--bible-muted) !important;
 }
+
+/* Keep desktop navigation vertical and readable at every supported width. */
+.approved-sidebar {
+  flex-direction: column !important;
+}
+
+.approved-nav {
+  width: 100% !important;
+}
+
+.sidebar-expanded .approved-brand > div:nth-child(2),
+.sidebar-expanded .approved-nav button span,
+.sidebar-expanded .sidebar-profile > div,
+.sidebar-expanded .engine-mini > div {
+  display: block !important;
+}
+
+.connection-badge.disconnected {
+  color: var(--bible-warning) !important;
+  background: rgba(226, 185, 107, 0.08) !important;
+  border-color: rgba(226, 185, 107, 0.24) !important;
+}
+
+.connection-badge.disconnected i {
+  background: var(--bible-warning) !important;
+}

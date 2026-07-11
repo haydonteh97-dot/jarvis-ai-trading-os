@@ -3392,7 +3392,7 @@
     <div class="topbar-actions">
       <button class="mobile-nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false">${lineIcon("menu")}</button>
       <span class="premium-badge">Premium</span>
-      <span class="connection-badge"><i></i>MT5 Connected</span>
+      <span class="connection-badge disconnected"><i></i>MT5 Offline</span>
       <button type="button" aria-label="Notifications">${lineIcon("bell")}<i></i></button>
       <div class="profile-pill" title="${mockUser.name}"><span>${mockUser.name.slice(0, 1).toUpperCase()}</span><b>${mockUser.name}</b></div>
     </div>
