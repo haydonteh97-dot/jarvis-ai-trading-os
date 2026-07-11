@@ -1466,6 +1466,7 @@
 	const storedPotentialTradeState = JSON.parse(localStorage.getItem("jarvis-potential-trades") || "{}");
 	const storedPotentialTradeFeedback = JSON.parse(localStorage.getItem("jarvis-trade-feedback") || "[]");
 	const storedPotentialTradeOutcomes = JSON.parse(localStorage.getItem("jarvis-trade-outcomes") || "{}");
+	const storedUiLanguage = localStorage.getItem("jarvis-ui-language") === "zh" ? "zh" : "en";
 	const storedJarvisMemory = JSON.parse(localStorage.getItem("jarvis-memory") || JSON.stringify({
 		lastIntent: "",
 		previousQuestion: "",
@@ -1512,7 +1513,7 @@
 		jarvis: {
 			promptIndex: 0,
 			question: "",
-			language: "en",
+			language: storedUiLanguage,
 			status: "idle",
 			progressIndex: 0,
 			mentorNote: "",
@@ -1536,13 +1537,13 @@
 				previousUserQuestion: storedJarvisMemory.previousQuestion || "",
 				previousJarvisAnswer: "",
 				missingInformation: [],
-				language: "en"
+				language: storedUiLanguage
 			},
 			memory: storedJarvisMemory,
 			isProcessing: false
 		},
 		approvedUi: {
-			sidebarExpanded: false,
+			sidebarExpanded: true,
 			marketFilter: "All",
 			opportunityFilter: "All",
 			analysisMode: "Chart Analysis",
@@ -3091,53 +3092,63 @@
   `;
 	}
 	function timeGreeting() {
-		if (state.loginHour < 12) return "Good morning";
-		if (state.loginHour < 18) return "Good afternoon";
-		return "Good evening";
+		const isZh = state.jarvis.language === "zh";
+		if (state.loginHour < 12) return isZh ? "早上好" : "Good morning";
+		if (state.loginHour < 18) return isZh ? "下午好" : "Good afternoon";
+		return isZh ? "晚上好" : "Good evening";
 	}
 	const approvedNavItems = [
 		{
 			label: "Workspace",
+			labelZh: "工作空间",
 			page: "Home",
 			icon: "home"
 		},
 		{
 			label: "Ask JARVIS",
+			labelZh: "询问 JARVIS",
 			page: "JARVIS",
 			icon: "message"
 		},
 		{
 			label: "AI Analysis",
+			labelZh: "AI 分析",
 			page: "AIAnalysis",
 			icon: "analysis"
 		},
 		{
 			label: "Upload Chart",
+			labelZh: "上传图表",
 			page: "UploadChart",
 			icon: "upload"
 		},
 		{
 			label: "Macro Intelligence",
+			labelZh: "宏观情报",
 			page: "Macro",
 			icon: "macro"
 		},
 		{
 			label: "News & Events",
+			labelZh: "新闻与事件",
 			page: "Calendar",
 			icon: "calendar"
 		},
 		{
 			label: "Opportunity Scanner",
+			labelZh: "机会扫描",
 			page: "OpportunityScanner",
 			icon: "scanner"
 		},
 		{
 			label: "Trade Planner",
+			labelZh: "交易规划",
 			page: "TradePlanner",
 			icon: "planner"
 		},
 		{
 			label: "Settings",
+			labelZh: "设置",
 			page: "Settings",
 			icon: "settings"
 		}
@@ -3334,6 +3345,7 @@
 	function sidebar() {
 		const side = el("aside", "sidebar approved-sidebar");
 		const visibleNavItems = state.role === "admin" ? approvedAdminNavItems : approvedNavItems;
+		const isZh = state.jarvis.language === "zh";
 		side.innerHTML = `
     <div class="brand-lockup approved-brand">
       <div class="brand-mark">J</div>
@@ -3345,15 +3357,18 @@
     <div class="sidebar-footer">
       <div class="sidebar-profile">
         <span>${mockUser.name.slice(0, 1).toUpperCase()}</span>
-        <div><strong>${mockUser.name}</strong><small>Premium Member</small></div>
+        <div><strong>${mockUser.name}</strong><small>${isZh ? "高级会员" : "Premium Member"}</small></div>
       </div>
-      <div class="engine-mini"><i></i><div><strong>JARVIS Engine</strong><small>Online</small></div></div>
+      <div class="engine-mini"><i></i><div><strong>JARVIS Engine</strong><small>${isZh ? "在线" : "Online"}</small></div></div>
       ${state.isAdminUser ? `<button class="admin-switch">${state.role === "admin" ? "User Workspace" : "Master Center"}</button>` : ""}
     </div>
   `;
 		const nav = side.querySelector("nav");
 		visibleNavItems.forEach((item) => {
-			const button = el("button", item.page === state.activePage ? "active" : "", `${lineIcon(item.icon)}<span>${item.label}</span>`);
+			const itemLabel = isZh && item.labelZh ? item.labelZh : item.label;
+			const button = el("button", item.page === state.activePage ? "active" : "", `${lineIcon(item.icon)}<span>${itemLabel}</span>`);
+			button.setAttribute("aria-label", itemLabel);
+			button.setAttribute("title", itemLabel);
 			button.addEventListener("click", () => {
 				state.activePage = item.page;
 				document.body.classList.remove("nav-open");
@@ -3384,15 +3399,20 @@
 	function topbar() {
 		const bar = el("header", "topbar approved-topbar");
 		const title = pageTitle();
+		const isZh = state.jarvis.language === "zh";
 		bar.innerHTML = `
     <div class="topbar-title">
-      <p>${state.role === "admin" ? "Master Workspace" : "AI Trading Operation Platform"}</p>
+      <p>${state.role === "admin" ? isZh ? "管理工作空间" : "Master Workspace" : isZh ? "AI 交易操作平台" : "AI Trading Operation Platform"}</p>
       <h2>${title}</h2>
     </div>
     <div class="topbar-actions">
       <button class="mobile-nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false">${lineIcon("menu")}</button>
       <span class="premium-badge">Premium</span>
-      <span class="connection-badge disconnected"><i></i>MT5 Offline</span>
+      <div class="language-switch" role="group" aria-label="Language">
+        <button type="button" data-ui-language="en" class="${isZh ? "" : "active"}" aria-pressed="${!isZh}">EN</button>
+        <span>/</span>
+        <button type="button" data-ui-language="zh" class="${isZh ? "active" : ""}" aria-pressed="${isZh}">CN</button>
+      </div>
       <button type="button" aria-label="Notifications">${lineIcon("bell")}<i></i></button>
       <div class="profile-pill" title="${mockUser.name}"><span>${mockUser.name.slice(0, 1).toUpperCase()}</span><b>${mockUser.name}</b></div>
     </div>
@@ -3404,10 +3424,22 @@
 			document.body.classList.toggle("nav-open", isOpen);
 			event.currentTarget.setAttribute("aria-expanded", String(isOpen));
 		});
+		bar.querySelectorAll("[data-ui-language]").forEach((button) => {
+			button.addEventListener("click", () => {
+				const language = button.dataset.uiLanguage === "zh" ? "zh" : "en";
+				if (state.jarvis.language === language) return;
+				state.jarvis.language = language;
+				state.jarvis.conversationState.language = language;
+				localStorage.setItem("jarvis-ui-language", language);
+				renderFromTop();
+			});
+		});
 		return bar;
 	}
 	function pageTitle() {
-		return [...approvedNavItems, ...approvedAdminNavItems].find((item) => item.page === state.activePage)?.label || (state.role === "admin" ? "Dashboard" : "Workspace");
+		const item = [...approvedNavItems, ...approvedAdminNavItems].find((entry) => entry.page === state.activePage);
+		if (item) return state.jarvis.language === "zh" && item.labelZh ? item.labelZh : item.label;
+		return state.role === "admin" ? "Dashboard" : state.jarvis.language === "zh" ? "工作空间" : "Workspace";
 	}
 	function pageContentForActivePage(brain) {
 		if (state.activePage === "JARVIS") return jarvisPageContent(brain);
@@ -3423,38 +3455,47 @@
 		return homePageContent(brain);
 	}
 	function homePageContent(brain) {
-		return `
-    <section class="approved-workspace workspace-command-center bible-home">
-      <header class="bible-greeting">
-        <p>${timeGreeting()},</p>
-        <h1>${mockUser.name}</h1>
-        <span>Your AI Trading Operation Platform</span>
-      </header>
-      <section class="bible-command-hero">
-        ${approvedCommandBar("Ask JARVIS anything...", "home")}
-        <div class="bible-suggestions">
-          ${[
+		const isZh = state.jarvis.language === "zh";
+		const suggestions = isZh ? [
+			"现在可以买 Gold 吗？",
+			"CPI 预期是多少？",
+			"分析这张图表",
+			"最新美联储新闻",
+			"上传我的图表",
+			"寻找交易机会"
+		] : [
 			"Can I buy Gold now?",
 			"What is the CPI forecast?",
 			"Analyze this chart",
 			"Latest news on Fed",
 			"Upload my chart",
 			"Find trading opportunities"
-		].map((item) => `<button type="button" data-quick-prompt="${item}">${item}</button>`).join("")}
+		];
+		return `
+    <section class="approved-workspace workspace-command-center bible-home">
+      <header class="bible-greeting">
+        <p>${timeGreeting()},</p>
+        <h1>${mockUser.name}</h1>
+        <span>${isZh ? "您的 AI 交易操作平台" : "Your AI Trading Operation Platform"}</span>
+      </header>
+      <section class="bible-command-hero">
+        ${approvedCommandBar(isZh ? "向 JARVIS 询问任何市场问题..." : "Ask JARVIS anything...", "home")}
+        <div class="bible-suggestions">
+          ${suggestions.map((item) => `<button type="button" data-quick-prompt="${item}">${item}</button>`).join("")}
         </div>
       </section>
-      <section class="bible-live-strip" aria-label="Live quotes">
-        <div class="live-label"><i></i>LIVE</div>
+      <section class="bible-live-strip" aria-label="${isZh ? "市场报价" : "Live quotes"}">
+        <div class="live-label"><i></i>${isZh ? "市场" : "LIVE"}</div>
         ${[
 			"XAUUSD",
 			"EURUSD",
 			"DXY",
 			"BTCUSD",
 			"USOIL"
-		].map((symbol) => `<div class="live-quote"><strong>${symbol}</strong><span>Awaiting verified feed</span></div>`).join("")}
+		].map((symbol) => `<div class="live-quote"><strong>${symbol}</strong><span>${isZh ? "等待已验证数据" : "Awaiting verified feed"}</span></div>`).join("")}
       </section>
       <blockquote class="daily-quote">
-        <p>“Discipline is the bridge between goals and accomplishment.”</p>
+        <p>${isZh ? "“纪律是连接目标与成就的桥梁。”" : "“Discipline is the bridge between goals and accomplishment.”"}</p>
         <cite>— JARVIS</cite>
       </blockquote>
     </section>

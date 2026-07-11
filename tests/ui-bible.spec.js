@@ -17,24 +17,32 @@ test('desktop workspace follows the locked Bible hierarchy', async ({ page }) =>
   await expect(page.locator('.bible-suggestions button')).toHaveCount(6);
   await expect(page.locator('.live-quote')).toHaveCount(5);
   await expect(page.locator('.approved-nav button')).toHaveCount(9);
-  await expect(page.locator('.connection-badge')).toHaveText('MT5 Offline');
+  await expect(page.locator('.connection-badge')).toHaveCount(0);
+  await expect(page.locator('.language-switch')).toBeVisible();
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   expect(overflow).toBe(false);
-  await page.screenshot({ path: 'artifacts/workspace-desktop.png', fullPage: false });
-
-  await page.getByRole('button', { name: 'Expand navigation' }).click();
   await expect(page.locator('.app-shell')).toHaveClass(/sidebar-expanded/);
-  await page.waitForTimeout(400);
   expect(Math.round((await page.locator('.approved-sidebar').boundingBox()).width)).toBe(252);
   await expect(page.locator('.approved-nav button').first().locator('span')).toBeVisible();
   expect((await page.locator('.approved-nav').boundingBox()).width).toBeGreaterThan(200);
+
+  await page.locator('[data-ui-language="zh"]').click();
+  await expect(page.locator('.approved-nav button').first()).toHaveAccessibleName('工作空间');
+  await expect(page.locator('.bible-greeting p')).toContainText(/早上好|下午好|晚上好/);
+  await expect(page.locator('[data-ui-language="zh"]')).toHaveClass(/active/);
+  await page.locator('[data-ui-language="en"]').click();
+  await expect(page.locator('.approved-nav button').first()).toHaveAccessibleName('Workspace');
+
+  await page.screenshot({ path: 'artifacts/workspace-desktop.png', fullPage: false });
   await page.screenshot({ path: 'artifacts/sidebar-desktop.png', fullPage: false });
 
   await page.getByRole('button', { name: 'Ask JARVIS' }).click();
   await expect(page.locator('.ask-page')).toBeVisible();
   await page.getByRole('button', { name: 'Collapse navigation' }).click();
   await expect(page.locator('.app-shell')).not.toHaveClass(/sidebar-expanded/);
+  await page.getByRole('button', { name: 'Expand navigation' }).click();
+  await expect(page.locator('.app-shell')).toHaveClass(/sidebar-expanded/);
   await page.screenshot({ path: 'artifacts/ask-jarvis-desktop.png', fullPage: true });
 });
 
