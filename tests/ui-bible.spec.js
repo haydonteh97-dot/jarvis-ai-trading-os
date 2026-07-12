@@ -58,7 +58,13 @@ test('mobile workspace has no overflow and the drawer opens and closes', async (
   await page.getByRole('button', { name: 'Open navigation' }).click();
   await expect(page.locator('.app-shell')).toHaveClass(/mobile-nav-open/);
   await page.waitForTimeout(400);
-  expect(Math.round((await page.locator('.approved-sidebar').boundingBox()).x)).toBe(0);
+  const drawerBox = await page.locator('.approved-sidebar').boundingBox();
+  expect(Math.round(drawerBox.x)).toBe(0);
+  expect(drawerBox.width).toBeGreaterThanOrEqual(280);
+  expect(drawerBox.width).toBeLessThanOrEqual(300);
+  await expect(page.locator('.approved-nav button span:visible')).toHaveCount(9);
+  await expect(page.locator('.sidebar-profile')).toBeVisible();
+  await page.screenshot({ path: 'artifacts/mobile-drawer.png', fullPage: false });
 
   await page.locator('.mobile-nav-close').click();
   await expect(page.locator('.app-shell')).not.toHaveClass(/mobile-nav-open/);

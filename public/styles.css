@@ -7203,4 +7203,31 @@ body:has(.bible-home)::before {
   .bible-live-strip {
     min-height: 62px;
   }
+
+  /* Mobile drawer: expanded navigation always shows icon and label. */
+  .approved-sidebar,
+  .sidebar-expanded .approved-sidebar {
+    width: min(calc(100vw - 24px), 296px) !important;
+    min-width: min(calc(100vw - 24px), 296px) !important;
+  }
+
+  .app-shell.mobile-nav-open .approved-nav button {
+    grid-template-columns: 40px minmax(0, 1fr) !important;
+    justify-items: start !important;
+    width: 100% !important;
+    margin-inline: 0 !important;
+    padding: 0 10px !important;
+    gap: 10px !important;
+  }
+
+  .app-shell.mobile-nav-open .approved-nav button svg {
+    justify-self: center;
+  }
+
+  .app-shell.mobile-nav-open .approved-nav button span {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    text-align: left;
+  }
 }
