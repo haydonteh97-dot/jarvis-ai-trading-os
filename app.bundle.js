@@ -3465,6 +3465,7 @@
       <section class="bible-command-hero">
         ${approvedCommandBar(isZh ? "向 JARVIS 询问任何市场问题..." : "Ask JARVIS anything...", "home")}
         <div class="bible-suggestions">
+          <span class="suggestions-label">${isZh ? "试着问" : "Try asking"}</span>
           ${suggestions.map((item) => `<button type="button" data-quick-prompt="${item}">${item}</button>`).join("")}
         </div>
       </section>
@@ -3859,7 +3860,7 @@
 		return `
     <article class="jarvis-mentor approved-command-bar">
       <form class="jarvis-question-form" data-mode="${mode}">
-        <span>${lineIcon("spark")}</span>
+        <span class="${mode === "home" ? "jarvis-voice-orb" : ""}">${mode === "home" ? `<span class="desktop-wave-icon">${lineIcon("wave")}</span><span class="mobile-spark-icon">${lineIcon("spark")}</span>` : lineIcon("spark")}</span>
         <textarea id="jarvisQuestion" rows="1" placeholder="${placeholder}">${state.jarvis.question}</textarea>
         <div class="jarvis-actions">
           <button class="ghost-button" type="button" disabled>${lineIcon("mic")}</button>
@@ -4001,6 +4002,7 @@
 			send: "M4 12l16-7-7 16-2-7z",
 			upload: "M12 16V5 M8 9l4-4 4 4 M5 19h14",
 			mic: "M12 4a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V7a3 3 0 0 1 3-3z M5 12a7 7 0 0 0 14 0 M12 19v3",
+			wave: "M5 10v4 M8 7v10 M11 4v16 M14 8v8 M17 6v12 M20 10v4",
 			menu: "M4 7h16 M4 12h16 M4 17h16",
 			close: "M6 6l12 12 M18 6L6 18"
 		};

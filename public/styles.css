@@ -7368,3 +7368,246 @@ body:has(.bible-home)::before {
     justify-self: center !important;
   }
 }
+
+/* Sprint 2 final desktop hero replacement. Mobile layout remains unchanged. */
+@media (min-width: 821px) {
+  body:has(.bible-home)::before {
+    inset: 0 0 auto;
+    width: 100%;
+    height: clamp(500px, 56vh, 610px);
+    opacity: 0.94;
+    background:
+      linear-gradient(180deg, rgba(3, 7, 13, 0.08) 0%, rgba(3, 7, 13, 0.02) 54%, rgba(3, 7, 13, 0.68) 100%),
+      url("./assets/earth-horizon-master.png") center bottom / max(1500px, 100vw) auto no-repeat;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 12%, #000 88%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 12%, #000 88%, transparent 100%);
+  }
+
+  body:has(.bible-home)::after {
+    background:
+      radial-gradient(circle at 50% 35%, rgba(106, 209, 239, 0.08), transparent 25%),
+      linear-gradient(180deg, transparent 0%, rgba(2, 6, 12, 0.12) 72%, rgba(2, 6, 12, 0.48) 100%);
+  }
+
+  .workspace:has(.bible-home) .approved-topbar {
+    background: linear-gradient(180deg, rgba(3, 7, 13, 0.84), rgba(3, 7, 13, 0.08)) !important;
+    border-bottom-color: transparent !important;
+  }
+
+  .workspace:has(.bible-home) .topbar-title {
+    visibility: hidden;
+  }
+
+  .workspace:has(.bible-home) .page-stack {
+    padding-inline: clamp(34px, 4.6vw, 84px) !important;
+    padding-bottom: 32px !important;
+  }
+
+  .bible-home {
+    display: block !important;
+    min-height: calc(100dvh - 72px);
+    padding: clamp(28px, 3.2vh, 40px) 0 28px !important;
+  }
+
+  .bible-greeting {
+    width: min(990px, calc(100% - 32px));
+    margin: 0 auto;
+    padding-left: 18px;
+  }
+
+  .bible-greeting p {
+    color: #f2f7fb !important;
+    font-size: clamp(25px, 2.15vw, 36px) !important;
+    line-height: 1.15;
+    font-weight: 400;
+  }
+
+  .bible-greeting h1 {
+    margin: 6px 0 16px;
+    color: #49cce8 !important;
+    font-size: clamp(56px, 5vw, 78px) !important;
+    line-height: 0.98;
+    font-weight: 430;
+    text-shadow: 0 0 34px rgba(73, 204, 232, 0.16);
+  }
+
+  .bible-greeting span {
+    color: #8797a6 !important;
+    font-size: clamp(14px, 1.1vw, 17px) !important;
+    font-weight: 400;
+  }
+
+  .bible-command-hero {
+    width: min(990px, calc(100% - 32px));
+    margin: clamp(150px, 17vh, 174px) auto 0;
+    gap: clamp(30px, 3.2vh, 40px);
+  }
+
+  .bible-home .approved-command-bar .jarvis-question-form {
+    grid-template-columns: 74px minmax(0, 1fr) auto;
+    min-height: clamp(108px, 12vh, 126px);
+    padding: 14px 24px 14px 20px !important;
+    overflow: hidden;
+    background: linear-gradient(90deg, rgba(5, 20, 33, 0.93), rgba(4, 13, 24, 0.88)) !important;
+    border-color: rgba(77, 215, 244, 0.64) !important;
+    border-radius: 999px !important;
+    box-shadow:
+      0 24px 70px rgba(0, 0, 0, 0.42),
+      inset 0 0 36px rgba(77, 215, 244, 0.035),
+      0 0 24px rgba(77, 215, 244, 0.11) !important;
+  }
+
+  .bible-home .jarvis-voice-orb {
+    display: grid;
+    place-items: center;
+    width: 66px;
+    height: 66px;
+    color: #54def7 !important;
+    border: 1px solid rgba(84, 222, 247, 0.82);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(58, 202, 232, 0.16), rgba(3, 14, 25, 0.9) 68%);
+    box-shadow: 0 0 22px rgba(84, 222, 247, 0.25), inset 0 0 18px rgba(84, 222, 247, 0.08);
+  }
+
+  .bible-home .jarvis-voice-orb .line-icon {
+    width: 32px;
+    height: 32px;
+    stroke-width: 1.45;
+  }
+
+  .desktop-wave-icon {
+    display: inline-grid;
+  }
+
+  .mobile-spark-icon {
+    display: none;
+  }
+
+  .bible-home .approved-command-bar textarea {
+    width: calc(100% - 20px);
+    min-height: 66px !important;
+    margin-left: 20px;
+    padding-inline: 24px !important;
+    box-sizing: border-box;
+    color: #eef6fb !important;
+    font-size: clamp(20px, 1.65vw, 25px) !important;
+    font-weight: 400;
+  }
+
+  .bible-home .approved-command-bar textarea::placeholder {
+    color: #8493a2 !important;
+  }
+
+  .bible-home .jarvis-actions {
+    gap: 12px !important;
+  }
+
+  .bible-home .jarvis-actions button {
+    width: 62px !important;
+    height: 62px !important;
+    color: #dbe8ee !important;
+    background: rgba(3, 13, 24, 0.72) !important;
+    border-color: rgba(151, 196, 219, 0.11) !important;
+    border-radius: 50% !important;
+  }
+
+  .bible-home .jarvis-actions button[type="submit"] {
+    color: #56daf3 !important;
+    background: rgba(6, 22, 35, 0.9) !important;
+    border-color: rgba(120, 215, 239, 0.13) !important;
+  }
+
+  .bible-suggestions {
+    width: 100%;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    gap: 10px;
+  }
+
+  .bible-suggestions .suggestions-label {
+    flex: 0 0 auto;
+    margin-right: 8px;
+    color: #f3f6f8 !important;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .bible-suggestions button {
+    flex: 0 1 auto;
+    min-height: 35px;
+    padding: 0 13px !important;
+    overflow: hidden;
+    color: #98a8b5 !important;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: rgba(3, 12, 22, 0.66) !important;
+    border-color: rgba(151, 196, 219, 0.12) !important;
+  }
+
+  .bible-suggestions button::before {
+    margin-right: 7px;
+    color: #55dff7;
+    content: "\2197";
+  }
+
+  .bible-live-strip {
+    width: min(1260px, 100%);
+    min-height: clamp(82px, 9vh, 100px);
+    margin: clamp(52px, 6vh, 70px) auto 0;
+    background: rgba(2, 9, 17, 0.48);
+    border-width: 1px 0;
+    border-radius: 0;
+    backdrop-filter: blur(16px);
+  }
+
+  .live-label {
+    padding-inline: 22px;
+    font-size: 10px;
+  }
+
+  .live-quote {
+    align-items: flex-start;
+    justify-content: center;
+    flex-direction: column;
+    padding-inline: clamp(14px, 1.5vw, 24px);
+  }
+
+  .live-quote strong {
+    font-size: 12px;
+  }
+
+  .live-quote span {
+    width: 100%;
+    min-height: 0;
+    padding: 4px 0 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    font-size: 9px;
+  }
+
+  .daily-quote {
+    margin-top: clamp(34px, 4vh, 48px);
+  }
+
+  .daily-quote p {
+    color: #8193a2 !important;
+    font-size: clamp(15px, 1.2vw, 18px) !important;
+  }
+}
+
+@media (max-width: 820px) {
+  .suggestions-label {
+    display: none;
+  }
+
+  .desktop-wave-icon {
+    display: none;
+  }
+
+  .mobile-spark-icon {
+    display: inline-grid;
+  }
+}
