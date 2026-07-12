@@ -42,7 +42,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 1920, height: 108
   });
 }
 
-for (const viewport of [{ width: 390, height: 844 }, { width: 430, height: 932 }]) {
+for (const viewport of [{ width: 390, height: 844 }, { width: 430, height: 932 }, { width: 390, height: 650 }]) {
   test(`mobile workspace and drawer at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await login(page);
@@ -53,7 +53,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 430, height: 932 }
     }));
     expect(mobileState.overflow).toBe(false);
     expect(mobileState.earthCrop).toBe(true);
-    if (viewport.width === 390) await page.screenshot({ path: 'artifacts/workspace-mobile-closed.png', fullPage: false });
+    if (viewport.width === 390 && viewport.height === 844) await page.screenshot({ path: 'artifacts/workspace-mobile-closed.png', fullPage: false });
 
     await page.getByRole('button', { name: 'Open navigation' }).click();
     await expect(page.locator('.app-shell')).toHaveClass(/mobile-nav-open/);
@@ -65,9 +65,13 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 430, height: 932 }
     await expect(page.locator('.approved-nav button span:visible')).toHaveCount(9);
     await expect(page.locator('.sidebar-profile')).toBeVisible();
     expect(await page.evaluate(() => getComputedStyle(document.body).overflow)).toBe('hidden');
-    if (viewport.width === 390) await page.screenshot({ path: 'artifacts/workspace-mobile-open.png', fullPage: false });
+    const navBox = await page.locator('.approved-nav').boundingBox();
+    const footerBox = await page.locator('.sidebar-footer').boundingBox();
+    expect(navBox.y + navBox.height).toBeLessThanOrEqual(footerBox.y + 1);
+    if (viewport.width === 390 && viewport.height === 844) await page.screenshot({ path: 'artifacts/workspace-mobile-open.png', fullPage: false });
+    if (viewport.height === 650) await page.screenshot({ path: 'artifacts/mobile-drawer-compact.png', fullPage: false });
 
-    if (viewport.width === 390) await page.locator('.mobile-nav-backdrop').click({ position: { x: viewport.width - 5, y: 400 } });
+    if (viewport.width === 390) await page.locator('.mobile-nav-backdrop').click({ position: { x: viewport.width - 5, y: Math.min(400, viewport.height - 5) } });
     else await page.locator('.mobile-nav-close').click();
     await expect(page.locator('.app-shell')).not.toHaveClass(/mobile-nav-open/);
     await page.waitForTimeout(400);

@@ -7321,3 +7321,50 @@ body:has(.bible-home)::before {
     mask-image: linear-gradient(to bottom, #000 0%, #000 78%, transparent 100%);
   }
 }
+
+/* iPhone browser chrome: keep drawer navigation and footer in separate flow regions. */
+@media (max-width: 820px) {
+  .approved-sidebar,
+  .sidebar-expanded .approved-sidebar {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    padding-bottom: max(14px, env(safe-area-inset-bottom)) !important;
+    overflow: hidden !important;
+  }
+
+  .approved-sidebar .approved-brand {
+    flex: 0 0 auto;
+  }
+
+  .app-shell.mobile-nav-open .approved-nav {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    padding: 10px 0 12px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+  }
+
+  .app-shell.mobile-nav-open .sidebar-footer {
+    position: static !important;
+    inset: auto !important;
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    margin-top: 8px !important;
+    padding-top: 10px;
+    border-top: 1px solid var(--bible-border);
+  }
+
+  .app-shell.mobile-nav-open .sidebar-profile,
+  .app-shell.mobile-nav-open .engine-mini {
+    grid-template-columns: 40px minmax(0, 1fr) !important;
+    justify-items: stretch !important;
+    width: 100% !important;
+    min-height: 44px !important;
+  }
+
+  .app-shell.mobile-nav-open .sidebar-profile > span,
+  .app-shell.mobile-nav-open .engine-mini > i {
+    justify-self: center !important;
+  }
+}
