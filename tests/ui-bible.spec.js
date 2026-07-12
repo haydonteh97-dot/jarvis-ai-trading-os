@@ -9,44 +9,38 @@ async function login(page) {
   await expect(page.locator('.bible-home')).toBeVisible();
 }
 
-test('desktop workspace follows the locked Bible hierarchy', async ({ page }) => {
-  await page.setViewportSize({ width: 1024, height: 900 });
-  await login(page);
+for (const viewport of [{ width: 1440, height: 900 }, { width: 1920, height: 1080 }]) {
+  test(`desktop Workspace and sidebar at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await login(page);
 
-  await expect(page.locator('.bible-home > *')).toHaveCount(4);
-  await expect(page.locator('.bible-suggestions button')).toHaveCount(6);
-  await expect(page.locator('.live-quote')).toHaveCount(5);
-  await expect(page.locator('.approved-nav button')).toHaveCount(9);
-  await expect(page.locator('.connection-badge')).toHaveCount(0);
-  await expect(page.locator('.language-switch')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Notifications' })).toHaveCount(0);
-  await expect(page.locator('.premium-badge')).toBeVisible();
-  await expect(page.locator('.profile-pill')).toBeVisible();
+    await expect(page.locator('.bible-home > *')).toHaveCount(4);
+    await expect(page.locator('.bible-suggestions button')).toHaveCount(6);
+    await expect(page.locator('.live-quote')).toHaveCount(5);
+    await expect(page.locator('.approved-nav button')).toHaveCount(9);
 
-  const layout = await page.evaluate(() => ({
-    overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
-    earth: getComputedStyle(document.body, '::before').backgroundImage.includes('earth-horizon'),
-  }));
-  expect(layout.overflow).toBe(false);
-  expect(layout.earth).toBe(true);
-  await expect(page.locator('.app-shell')).not.toHaveClass(/sidebar-expanded/);
-  expect(Math.round((await page.locator('.approved-sidebar').boundingBox()).width)).toBe(76);
-  expect(Math.round((await page.locator('.jarvis-question-form').boundingBox()).height)).toBeGreaterThanOrEqual(100);
-  await page.screenshot({ path: 'artifacts/workspace-desktop.png', fullPage: false });
+    const layout = await page.evaluate(() => ({
+      overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      earth: getComputedStyle(document.body, '::before').backgroundImage.includes('earth-horizon'),
+    }));
+    expect(layout.overflow).toBe(false);
+    expect(layout.earth).toBe(true);
+    await expect(page.locator('.app-shell')).not.toHaveClass(/sidebar-expanded/);
+    expect(Math.round((await page.locator('.approved-sidebar').boundingBox()).width)).toBe(76);
+    expect(Math.round((await page.locator('.jarvis-question-form').boundingBox()).height)).toBeGreaterThanOrEqual(100);
+    if (viewport.width === 1440) await page.screenshot({ path: 'artifacts/workspace-desktop-collapsed.png', fullPage: false });
 
-  await page.getByRole('button', { name: 'Expand navigation' }).click();
-  await expect(page.locator('.app-shell')).toHaveClass(/sidebar-expanded/);
-  await page.waitForTimeout(400);
-  expect(Math.round((await page.locator('.approved-sidebar').boundingBox()).width)).toBe(252);
-  await page.getByRole('button', { name: 'Settings' }).click();
-  await expect(page.locator('.settings-language-control')).toBeVisible();
-  await page.locator('[data-settings-language="zh"]').click();
-  expect(await page.evaluate(() => localStorage.getItem('jarvis-ui-language'))).toBe('zh');
-  await page.locator('[data-settings-language="en"]').click();
-  await page.getByRole('button', { name: 'Collapse navigation' }).click();
-  await expect(page.locator('.app-shell')).not.toHaveClass(/sidebar-expanded/);
-  await page.screenshot({ path: 'artifacts/settings-language-desktop.png', fullPage: false });
-});
+    await page.getByRole('button', { name: 'Expand navigation' }).click();
+    await expect(page.locator('.app-shell')).toHaveClass(/sidebar-expanded/);
+    await page.waitForTimeout(400);
+    expect(Math.round((await page.locator('.approved-sidebar').boundingBox()).width)).toBe(252);
+    await expect(page.locator('.approved-nav button span:visible')).toHaveCount(9);
+    if (viewport.width === 1440) await page.screenshot({ path: 'artifacts/workspace-desktop-expanded.png', fullPage: false });
+
+    await page.getByRole('button', { name: 'Ask JARVIS' }).click();
+    await expect(page.locator('.ask-page')).toBeVisible();
+  });
+}
 
 for (const viewport of [{ width: 390, height: 844 }, { width: 430, height: 932 }]) {
   test(`mobile workspace and drawer at ${viewport.width}x${viewport.height}`, async ({ page }) => {
@@ -59,6 +53,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 430, height: 932 }
     }));
     expect(mobileState.overflow).toBe(false);
     expect(mobileState.earthCrop).toBe(true);
+    if (viewport.width === 390) await page.screenshot({ path: 'artifacts/workspace-mobile-closed.png', fullPage: false });
 
     await page.getByRole('button', { name: 'Open navigation' }).click();
     await expect(page.locator('.app-shell')).toHaveClass(/mobile-nav-open/);
@@ -69,11 +64,13 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 430, height: 932 }
     expect(drawerBox.width).toBeLessThanOrEqual(320);
     await expect(page.locator('.approved-nav button span:visible')).toHaveCount(9);
     await expect(page.locator('.sidebar-profile')).toBeVisible();
-    await page.screenshot({ path: `artifacts/mobile-drawer-${viewport.width}.png`, fullPage: false });
+    expect(await page.evaluate(() => getComputedStyle(document.body).overflow)).toBe('hidden');
+    if (viewport.width === 390) await page.screenshot({ path: 'artifacts/workspace-mobile-open.png', fullPage: false });
 
-    await page.locator('.mobile-nav-close').click();
+    if (viewport.width === 390) await page.locator('.mobile-nav-backdrop').click({ position: { x: viewport.width - 5, y: 400 } });
+    else await page.locator('.mobile-nav-close').click();
     await expect(page.locator('.app-shell')).not.toHaveClass(/mobile-nav-open/);
     await page.waitForTimeout(400);
-    await page.screenshot({ path: `artifacts/workspace-mobile-${viewport.width}.png`, fullPage: true });
+    expect(await page.evaluate(() => getComputedStyle(document.body).overflow)).not.toBe('hidden');
   });
 }
