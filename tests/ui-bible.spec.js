@@ -78,3 +78,73 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 430, height: 932 }
     expect(await page.evaluate(() => getComputedStyle(document.body).overflow)).not.toBe('hidden');
   });
 }
+
+test.describe('Sprint 4 AI Analysis', () => {
+  test('desktop structured analysis, controls, loading and contextual handoff', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await login(page);
+    await page.getByRole('button', { name: 'AI Analysis' }).click();
+
+    await expect(page.locator('.ai-analysis-page')).toBeVisible();
+    await expect(page.locator('.analysis-module')).toHaveCount(13);
+    await expect(page.locator('.market-overview-module')).toBeVisible();
+    await expect(page.locator('.mtf-module')).toBeVisible();
+    await expect(page.locator('.structure-module')).toBeVisible();
+    await expect(page.locator('.bullish-module')).toBeVisible();
+    await expect(page.locator('.bearish-module')).toBeVisible();
+    await expect(page.getByText('Verified macro source not connected', { exact: true })).toBeVisible();
+    await expect(page.getByText('Live news source not connected', { exact: true })).toBeVisible();
+    await expect(page.getByText('Awaiting verified market data', { exact: true }).first()).toBeVisible();
+
+    await page.locator('#analysisAssetSelect').selectOption('EURUSD');
+    await expect(page.locator('.analysis-loading-state')).toBeVisible();
+    await expect(page.locator('#analysisAssetSelect')).toHaveValue('EURUSD');
+    await expect(page.locator('.analysis-loading-state')).toBeHidden({ timeout: 3000 });
+
+    await page.locator('#analysisTimeframeSelect').selectOption('H4');
+    await expect(page.locator('.analysis-loading-state')).toBeVisible();
+    await expect(page.locator('#analysisTimeframeSelect')).toHaveValue('H4');
+    await expect(page.locator('.analysis-loading-state')).toBeHidden({ timeout: 3000 });
+
+    const refresh = page.locator('#refreshAiAnalysis');
+    await refresh.click();
+    await expect(page.locator('.analysis-loading-state')).toBeVisible();
+    await expect(page.locator('#refreshAiAnalysis')).toBeDisabled();
+    await expect(page.locator('.analysis-loading-state')).toBeHidden({ timeout: 3000 });
+
+    const layout = await page.evaluate(() => ({
+      overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      overlaps: [...document.querySelectorAll('.analysis-module')].some((element, index, items) => {
+        const a = element.getBoundingClientRect();
+        return items.slice(index + 1).some((other) => {
+          const b = other.getBoundingClientRect();
+          return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+        });
+      }),
+    }));
+    expect(layout.overflow).toBe(false);
+    expect(layout.overlaps).toBe(false);
+
+    await page.locator('#askJarvisAboutAnalysis').click();
+    await expect(page.locator('.ask-page')).toBeVisible();
+    await expect(page.locator('#jarvisQuestion')).toHaveValue(/EURUSD H4 preliminary analysis/);
+  });
+
+  for (const viewport of [{ width: 390, height: 844 }, { width: 430, height: 932 }]) {
+    test(`mobile analysis stays in viewport at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await login(page);
+      await page.getByRole('button', { name: 'Open navigation' }).click();
+      await page.getByRole('button', { name: 'AI Analysis' }).click();
+      await expect(page.locator('.ai-analysis-page')).toBeVisible();
+      await expect(page.locator('.analysis-module')).toHaveCount(13);
+      const state = await page.evaluate(() => ({
+        overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+        maxCardWidth: Math.max(...[...document.querySelectorAll('.analysis-module')].map((card) => card.getBoundingClientRect().width)),
+        viewport: document.documentElement.clientWidth,
+      }));
+      expect(state.overflow).toBe(false);
+      expect(state.maxCardWidth).toBeLessThanOrEqual(state.viewport);
+    });
+  }
+});

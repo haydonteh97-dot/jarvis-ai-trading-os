@@ -1547,6 +1547,11 @@
 			marketFilter: "All",
 			opportunityFilter: "All",
 			analysisMode: "Chart Analysis",
+			analysisAsset: "XAUUSD",
+			analysisTimeframe: "H1",
+			analysisStatus: "idle",
+			analysisError: false,
+			analysisLastUpdated: "",
 			macroTab: "Top News",
 			calendarFilter: "Today",
 			settingsTab: "Profile"
@@ -3517,7 +3522,7 @@
 		if (state.activePage === "JARVIS") return jarvisPageContent(brain);
 		if (state.activePage === "MarketRadar") return marketRadarPageContent();
 		if (state.activePage === "AIAnalysis") return aiAnalysisPageContent(brain);
-		if (state.activePage === "UploadChart") return aiAnalysisPageContent(brain);
+		if (state.activePage === "UploadChart") return uploadChartPageContent(brain);
 		if (state.activePage === "OpportunityScanner") return opportunityScannerPageContent();
 		if (state.activePage === "Macro") return macroIntelligencePageContent();
 		if (state.activePage === "Calendar") return economicCalendarPageContent();
@@ -3639,7 +3644,7 @@
     </section>
   `;
 	}
-	function aiAnalysisPageContent(brain) {
+	function uploadChartPageContent(brain) {
 		const analysis = state.chartUpload.analysis || state.jarvis.quickAnalysis;
 		const mode = state.approvedUi.analysisMode;
 		return `
@@ -3684,6 +3689,144 @@
           </form>
           <button class="soft-action full" id="saveChartAnalysisButton" type="button" ${state.chartUpload.analysis ? "" : "disabled"}>Send to Trade Planner</button>
         </aside>
+      </section>
+    </section>
+	  `;
+	}
+	function aiAnalysisPageContent() {
+		const isZh = state.jarvis.language === "zh";
+		const asset = state.approvedUi.analysisAsset;
+		const timeframe = state.approvedUi.analysisTimeframe;
+		const isLoading = state.approvedUi.analysisStatus === "loading";
+		const hasChart = Boolean(state.chartUpload.previewUrl);
+		const analysis = state.chartUpload.analysis || state.jarvis.quickAnalysis;
+		const dataStatus = hasChart ? isZh ? "图表背景" : "Chart Context" : isZh ? "数据源未连接" : "Data Source Not Connected";
+		const bias = hasChart && ["Bullish", "Bearish", "Neutral"].includes(analysis?.bias) ? analysis.bias : "Neutral";
+		const structure = hasChart ? analysis?.marketStructure || (isZh ? "等待图表确认" : "Awaiting chart confirmation") : isZh ? "等待数据" : "Awaiting Data";
+		const unavailable = isZh ? "等待已验证市场数据" : "Awaiting verified market data";
+		const chartRequired = isZh ? "上传图表以获得准确的 Entry / SL / TP" : "Upload chart for accurate Entry / SL / TP";
+		const refreshed = state.approvedUi.analysisLastUpdated ? new Date(state.approvedUi.analysisLastUpdated).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+		const lastUpdated = refreshed ? `${isZh ? "页面刷新" : "Page refreshed"} ${refreshed}` : isZh ? "最后更新时间不可用" : "Last updated unavailable";
+		const row = (label, value, tone = "") => `<div class="analysis-data-row"><span>${label}</span><strong class="${tone}">${value}</strong></div>`;
+		const status = (value, tone = "muted") => `<span class="analysis-status ${tone}">${value}</span>`;
+		const unavailableList = (count, text) => `<ul class="analysis-compact-list">${Array.from({ length: count }, () => `<li>${text}</li>`).join("")}</ul>`;
+		return `
+    <section class="approved-workspace ai-analysis-page ${isLoading ? "is-loading" : ""}">
+      <header class="ai-analysis-head">
+        <div><h1>${isZh ? "AI 分析" : "AI Analysis"}</h1><p>${isZh ? "由 JARVIS 驱动的结构化市场情报。" : "Structured market intelligence powered by JARVIS."}</p></div>
+        <div class="ai-analysis-head-actions">
+          <div class="analysis-source-meta"><span>${lastUpdated}</span>${status(dataStatus, hasChart ? "info" : "warning")}</div>
+          <button class="analysis-refresh-button" id="refreshAiAnalysis" type="button" ${isLoading ? "disabled" : ""} aria-label="${isZh ? "刷新分析" : "Refresh analysis"}">${lineIcon("refresh")}<span>${isLoading ? isZh ? "分析中" : "Analysing" : isZh ? "刷新分析" : "Refresh Analysis"}</span></button>
+        </div>
+      </header>
+      <section class="analysis-selector-row" aria-label="${isZh ? "分析控制" : "Analysis controls"}">
+        <label><span>${isZh ? "资产" : "Asset"}</span><select id="analysisAssetSelect" aria-label="Asset">${["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "BTCUSD"].map((value) => `<option value="${value}" ${value === asset ? "selected" : ""}>${value}</option>`).join("")}</select></label>
+        <label><span>${isZh ? "周期" : "Timeframe"}</span><select id="analysisTimeframeSelect" aria-label="Timeframe">${["D1", "H4", "H1", "M15"].map((value) => `<option value="${value}" ${value === timeframe ? "selected" : ""}>${value}</option>`).join("")}</select></label>
+      </section>
+      ${state.approvedUi.analysisError ? `<section class="analysis-error-state" role="alert"><div><strong>${isZh ? "分析暂不可用" : "Analysis unavailable"}</strong><p>${isZh ? "JARVIS 无法完成分析。请重试或检查数据连接。" : "JARVIS could not complete the analysis. Please retry or verify the data connection."}</p><small>${dataStatus}</small></div><button id="retryAiAnalysis" type="button">${isZh ? "重试" : "Retry"}</button></section>` : ""}
+      <div class="analysis-loading-state" role="status" aria-live="polite" aria-hidden="${!isLoading}"><i></i><span>${isZh ? "JARVIS 正在分析..." : "JARVIS is analysing..."}</span></div>
+      <section class="ai-analysis-grid" aria-busy="${isLoading}">
+        <article class="analysis-module market-overview-module">
+          <div class="analysis-module-title"><h2>${isZh ? "市场概览" : "Market Overview"}</h2>${status(hasChart ? isZh ? "初步" : "Preliminary" : isZh ? "需要数据" : "Data Required", hasChart ? "info" : "warning")}</div>
+          <div class="market-overview-grid">
+            ${row(isZh ? "市场偏向" : "Market Bias", bias, bias === "Bullish" ? "positive" : bias === "Bearish" ? "negative" : "")}
+            ${row(isZh ? "市场模式" : "Market Mode", hasChart ? isZh ? "等待确认" : "Awaiting Confirmation" : isZh ? "等待数据" : "Awaiting Data")}
+            ${row(isZh ? "趋势强度" : "Trend Strength", isZh ? "数据不足" : "Insufficient Data")}
+            <div class="analysis-confidence"><span>${isZh ? "信心" : "Confidence"}</span><div class="confidence-ring preliminary"><strong>—</strong></div><small>${isZh ? "初步信心" : "Preliminary Confidence"}</small></div>
+            ${row(isZh ? "价格状态" : "Price Status", isZh ? "等待价格数据" : "Awaiting Price Data")}
+            ${row(isZh ? "分析质量" : "Analysis Quality", hasChart ? isZh ? "图表背景" : "Chart Context" : isZh ? "需要数据" : "Data Required")}
+          </div>
+        </article>
+        <article class="analysis-module mtf-module">
+          <div class="analysis-module-title"><h2>${isZh ? "多周期一致性" : "Multi-Timeframe Alignment"}</h2></div>
+          <div class="mtf-grid">${["D1", "H4", "H1", "M15"].map((tf) => `<div><span>${tf}</span><strong>${isZh ? "等待数据" : "Awaiting Data"}</strong></div>`).join("")}</div>
+          ${row(isZh ? "整体一致性" : "Overall Alignment", isZh ? "等待数据" : "Awaiting Data")}
+          <p class="module-note">${isZh ? "连接已验证市场数据后，JARVIS 才能比较各周期。" : "Connect verified market data before JARVIS compares timeframes."}</p>
+        </article>
+        <article class="analysis-module structure-module">
+          <div class="analysis-module-title"><h2>${isZh ? `市场结构 (${timeframe})` : `Market Structure (${timeframe})`}</h2></div>
+          <div class="structure-empty-visual" aria-label="${isZh ? "结构数据不可用" : "Structure data unavailable"}"><span>${lineIcon("analysis")}</span><p>${isZh ? "上传图表以建立解释性结构图" : "Upload a chart to build an explanatory structure view"}</p></div>
+          ${row(isZh ? "当前结构" : "Current Structure", structure)}
+          ${row(isZh ? "最新转变" : "Latest Shift", isZh ? "等待确认" : "Awaiting Confirmation")}
+          ${row(isZh ? "结构状态" : "Structure Status", isZh ? "等待确认" : "Awaiting Confirmation")}
+          ${row(isZh ? "确认水平" : "Confirmation Level", isZh ? "确认水平不可用" : "Confirmation level unavailable")}
+        </article>
+        <article class="analysis-module liquidity-module">
+          <div class="analysis-module-title"><h2>${isZh ? "流动性与关键区域" : "Liquidity & Key Zones"}</h2></div>
+          ${row(isZh ? "买方流动性" : "Buy-side Liquidity", unavailable)}
+          ${row(isZh ? "卖方流动性" : "Sell-side Liquidity", unavailable)}
+          ${row(isZh ? "支撑区" : "Support Zone", unavailable)}
+          ${row(isZh ? "阻力区" : "Resistance Zone", unavailable)}
+          ${row(isZh ? "订单块" : "Order Block", unavailable)}
+          ${row(isZh ? "公平价值缺口" : "Fair Value Gap", unavailable)}
+          ${row(isZh ? "扫流动性状态" : "Sweep Status", isZh ? "未验证" : "Not verified")}
+          <p class="module-note">${isZh ? "上传图表或连接已验证数据以识别准确区域。" : "Upload a chart or connect verified market data to identify accurate zones."}</p>
+        </article>
+        <article class="analysis-module condition-module">
+          <div class="analysis-module-title"><h2>${isZh ? "波动率与市场状态" : "Volatility & Market Condition"}</h2></div>
+          ${row(isZh ? "波动率" : "Volatility", isZh ? "不可用" : "Unavailable")}
+          ${row(isZh ? "市场状态" : "Market Condition", isZh ? "等待数据" : "Awaiting Data")}
+          ${row(isZh ? "交易时段" : "Session", isZh ? "时段数据不可用" : "Session Data Unavailable")}
+          ${row(isZh ? "扩张 / 压缩" : "Expansion / Compression", isZh ? "不可用" : "Unavailable")}
+        </article>
+        <article class="analysis-module trade-plan-module">
+          <div class="analysis-module-title"><h2>${isZh ? "潜在交易计划" : "Potential Trade Plan"}</h2>${status(isZh ? "需要数据" : "Data Required", "warning")}</div>
+          ${row(isZh ? "Setup 状态" : "Setup Status", hasChart ? isZh ? "图表必需" : "Chart Required" : isZh ? "需要数据" : "Data Required")}
+          ${row(isZh ? "进场区" : "Entry Zone", unavailable)}
+          ${row(isZh ? "止损" : "Stop Loss", chartRequired)}
+          ${row(isZh ? "止盈 1" : "Take Profit 1", unavailable)}
+          ${row(isZh ? "止盈 2" : "Take Profit 2", unavailable)}
+          ${row(isZh ? "止盈 3" : "Take Profit 3", unavailable)}
+          ${row(isZh ? "风险回报" : "Risk Reward", unavailable)}
+          ${row(isZh ? "失效水平" : "Invalidation Level", unavailable)}
+        </article>
+        <article class="analysis-module bullish-module">
+          <div class="analysis-module-title"><h2>${isZh ? "看涨情景" : "Bullish Scenario"}</h2></div>
+          ${row(isZh ? "条件" : "Condition", isZh ? "需要已验证结构" : "Verified structure required")}
+          ${row(isZh ? "确认" : "Confirmation", isZh ? "等待确认" : "Awaiting confirmation")}
+          ${row(isZh ? "目标区域" : "Target Area", unavailable)}
+          ${row(isZh ? "失效" : "Invalidation", unavailable)}
+          ${row(isZh ? "概率" : "Probability", isZh ? "数据不足" : "Insufficient Data", "positive")}
+        </article>
+        <article class="analysis-module bearish-module">
+          <div class="analysis-module-title"><h2>${isZh ? "看跌情景" : "Bearish Scenario"}</h2></div>
+          ${row(isZh ? "条件" : "Condition", isZh ? "需要已验证结构" : "Verified structure required")}
+          ${row(isZh ? "确认" : "Confirmation", isZh ? "等待确认" : "Awaiting confirmation")}
+          ${row(isZh ? "目标区域" : "Target Area", unavailable)}
+          ${row(isZh ? "失效" : "Invalidation", unavailable)}
+          ${row(isZh ? "概率" : "Probability", isZh ? "数据不足" : "Insufficient Data", "negative")}
+        </article>
+        <article class="analysis-module macro-news-module">
+          <div class="analysis-module-title"><h2>${isZh ? "宏观与新闻背景" : "Macro & News Context"}</h2></div>
+          <h3>${isZh ? "宏观" : "Macro"}</h3>${unavailableList(1, isZh ? "已验证宏观来源未连接" : "Verified macro source not connected")}
+          <h3>${isZh ? "新闻" : "News"}</h3>${unavailableList(1, isZh ? "实时新闻来源未连接" : "Live news source not connected")}
+          ${row(isZh ? "事件风险" : "Event Risk", isZh ? "数据不足" : "Insufficient Data")}
+        </article>
+        <article class="analysis-module risk-module">
+          <div class="analysis-module-title"><h2>${isZh ? "风险背景" : "Risk Context"}</h2></div>
+          ${row(isZh ? "波动风险" : "Volatility Risk", isZh ? "数据不足" : "Insufficient Data")}
+          ${row(isZh ? "新闻风险" : "News Risk", isZh ? "数据不足" : "Insufficient Data")}
+          ${row(isZh ? "结构风险" : "Structure Risk", isZh ? "数据不足" : "Insufficient Data")}
+          ${row(isZh ? "流动性风险" : "Liquidity Risk", isZh ? "数据不足" : "Insufficient Data")}
+          ${row(isZh ? "整体风险" : "Overall Risk", isZh ? "数据不足" : "Insufficient Data")}
+          <p class="analysis-warning">${isZh ? "在数据验证前保护资本，并避免根据不完整背景做决定。" : "Protect capital and avoid decisions based on incomplete context until data is verified."}</p>
+        </article>
+        <article class="analysis-module conclusion-module">
+          <div class="analysis-module-title"><h2>${isZh ? "JARVIS 结论" : "JARVIS Conclusion"}</h2></div>
+          <p class="analysis-conclusion">${isZh ? "等待数据 • 需要结构背景 • 初步" : "Awaiting Data • Structure Context Required • Preliminary"}</p>
+          ${row(isZh ? "主要因素" : "Main Factor", isZh ? "市场数据未验证" : "Market data is not verified")}
+          ${row(isZh ? "主要风险" : "Main Risk", isZh ? "背景不完整" : "Incomplete context")}
+          ${row(isZh ? "决定状态" : "Decision Status", isZh ? "需要数据" : "Data Required")}
+        </article>
+        <article class="analysis-module confirmation-module">
+          <div class="analysis-module-title"><h2>${isZh ? "下一项确认" : "Next Confirmation"}</h2></div>
+          <p>${hasChart ? isZh ? "需要验证图表结构" : "Verified chart structure required" : isZh ? "需要已验证数据" : "Verified data required"}</p>
+        </article>
+        <article class="analysis-module ask-context-module">
+          <div class="analysis-module-title"><h2>${isZh ? "询问 JARVIS" : "Ask JARVIS"}</h2></div>
+          <p>${isZh ? "带着当前资产、周期和风险背景继续讨论。" : "Continue with the active asset, timeframe, and risk context."}</p>
+          <button id="askJarvisAboutAnalysis" type="button">${isZh ? "询问 JARVIS 此分析" : "Ask JARVIS about this analysis"}${lineIcon("send")}</button>
+        </article>
       </section>
     </section>
   `;
@@ -3912,6 +4055,49 @@
 				renderFromTop();
 			});
 		});
+		const analysisAssetSelect = page.querySelector("#analysisAssetSelect");
+		const analysisTimeframeSelect = page.querySelector("#analysisTimeframeSelect");
+		analysisAssetSelect?.addEventListener("change", () => {
+			state.approvedUi.analysisAsset = analysisAssetSelect.value;
+			runAiAnalysisRefresh();
+		});
+		analysisTimeframeSelect?.addEventListener("change", () => {
+			state.approvedUi.analysisTimeframe = analysisTimeframeSelect.value;
+			runAiAnalysisRefresh();
+		});
+		page.querySelector("#refreshAiAnalysis")?.addEventListener("click", runAiAnalysisRefresh);
+		page.querySelector("#retryAiAnalysis")?.addEventListener("click", runAiAnalysisRefresh);
+		page.querySelector("#askJarvisAboutAnalysis")?.addEventListener("click", async () => {
+			const asset = state.approvedUi.analysisAsset;
+			const timeframe = state.approvedUi.analysisTimeframe;
+			const isZh = state.jarvis.language === "zh";
+			state.jarvis.topic = asset;
+			state.jarvis.conversationState.currentAsset = asset;
+			state.jarvis.conversationState.timeframe = timeframe;
+			state.jarvis.conversationState.currentTradeStatus = "Preliminary / Data Required";
+			state.jarvis.conversationState.missingInformation = ["Verified market data", "Verified macro source", "Live news source"];
+			state.jarvis.question = isZh ? `解释 ${asset} ${timeframe} 的初步分析，以及目前需要什么确认。` : `Explain the ${asset} ${timeframe} preliminary analysis and the confirmation currently required.`;
+			state.activePage = "JARVIS";
+			await renderFromTop();
+			const contextualInput = document.querySelector(".ask-page #jarvisQuestion");
+			if (contextualInput) contextualInput.value = state.jarvis.question;
+		});
+	}
+	async function runAiAnalysisRefresh() {
+		if (state.approvedUi.analysisStatus === "loading") return;
+		state.approvedUi.analysisStatus = "loading";
+		state.approvedUi.analysisError = false;
+		await render();
+		try {
+			await new Promise((resolve) => setTimeout(resolve, 700));
+			state.approvedUi.analysisLastUpdated = new Date().toISOString();
+		} catch (error) {
+			console.error("AI Analysis refresh failed", error);
+			state.approvedUi.analysisError = true;
+		} finally {
+			state.approvedUi.analysisStatus = "idle";
+			await render();
+		}
 	}
 	function adminPage() {
 		const brain = state.adminBrainData || {};
@@ -4157,6 +4343,7 @@
 			wave: "M5 10v4 M8 7v10 M11 4v16 M14 8v8 M17 6v12 M20 10v4",
 			menu: "M4 7h16 M4 12h16 M4 17h16",
 			close: "M6 6l12 12 M18 6L6 18"
+			,refresh: "M20 7v5h-5 M4 17v-5h5 M6 9a7 7 0 0 1 12-2l2 5 M18 15a7 7 0 0 1-12 2l-2-5"
 		};
 		return `<svg class="line-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="${icons[type] || icons.spark}" /></svg>`;
 	}
