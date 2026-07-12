@@ -48,26 +48,32 @@ test('desktop workspace follows the locked Bible hierarchy', async ({ page }) =>
   await page.screenshot({ path: 'artifacts/settings-language-desktop.png', fullPage: false });
 });
 
-test('mobile workspace has no overflow and the drawer opens and closes', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
-  await login(page);
+for (const viewport of [{ width: 390, height: 844 }, { width: 430, height: 932 }]) {
+  test(`mobile workspace and drawer at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await login(page);
 
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
-  expect(overflow).toBe(false);
+    const mobileState = await page.evaluate(() => ({
+      overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      earthCrop: getComputedStyle(document.body, '::before').backgroundImage.includes('earth-horizon'),
+    }));
+    expect(mobileState.overflow).toBe(false);
+    expect(mobileState.earthCrop).toBe(true);
 
-  await page.getByRole('button', { name: 'Open navigation' }).click();
-  await expect(page.locator('.app-shell')).toHaveClass(/mobile-nav-open/);
-  await page.waitForTimeout(400);
-  const drawerBox = await page.locator('.approved-sidebar').boundingBox();
-  expect(Math.round(drawerBox.x)).toBe(0);
-  expect(drawerBox.width).toBeGreaterThanOrEqual(280);
-  expect(drawerBox.width).toBeLessThanOrEqual(300);
-  await expect(page.locator('.approved-nav button span:visible')).toHaveCount(9);
-  await expect(page.locator('.sidebar-profile')).toBeVisible();
-  await page.screenshot({ path: 'artifacts/mobile-drawer.png', fullPage: false });
+    await page.getByRole('button', { name: 'Open navigation' }).click();
+    await expect(page.locator('.app-shell')).toHaveClass(/mobile-nav-open/);
+    await page.waitForTimeout(400);
+    const drawerBox = await page.locator('.approved-sidebar').boundingBox();
+    expect(Math.round(drawerBox.x)).toBe(0);
+    expect(drawerBox.width).toBeGreaterThanOrEqual(300);
+    expect(drawerBox.width).toBeLessThanOrEqual(320);
+    await expect(page.locator('.approved-nav button span:visible')).toHaveCount(9);
+    await expect(page.locator('.sidebar-profile')).toBeVisible();
+    await page.screenshot({ path: `artifacts/mobile-drawer-${viewport.width}.png`, fullPage: false });
 
-  await page.locator('.mobile-nav-close').click();
-  await expect(page.locator('.app-shell')).not.toHaveClass(/mobile-nav-open/);
-  await page.waitForTimeout(400);
-  await page.screenshot({ path: 'artifacts/workspace-mobile.png', fullPage: true });
-});
+    await page.locator('.mobile-nav-close').click();
+    await expect(page.locator('.app-shell')).not.toHaveClass(/mobile-nav-open/);
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: `artifacts/workspace-mobile-${viewport.width}.png`, fullPage: true });
+  });
+}
