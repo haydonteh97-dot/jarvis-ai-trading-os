@@ -5874,7 +5874,7 @@ body::before {
   pointer-events: none;
   background:
     linear-gradient(180deg, rgba(3, 7, 13, 0.22) 0%, rgba(3, 7, 13, 0.12) 58%, rgba(3, 7, 13, 0.52) 100%),
-    url("./assets/earth-horizon-v2.png") center bottom / cover no-repeat;
+    url("./assets/earth-horizon-master.png") center bottom / cover no-repeat;
   opacity: 0.78;
 }
 
@@ -7066,7 +7066,7 @@ body:has(.bible-home)::before {
   opacity: 0.9;
   background:
     linear-gradient(180deg, rgba(3, 7, 13, 0.34) 0%, rgba(3, 7, 13, 0.16) 52%, rgba(3, 7, 13, 0.58) 100%),
-    url("./assets/earth-horizon-v2.png") center bottom / cover no-repeat;
+    url("./assets/earth-horizon-master.png") center bottom / cover no-repeat;
 }
 
 .bible-home {
@@ -7087,9 +7087,9 @@ body:has(.bible-home)::before {
 }
 
 .bible-greeting h1 {
-  color: #e8f9ff !important;
+  color: #61e5fb !important;
   font-size: clamp(58px, 5.7vw, 84px) !important;
-  text-shadow: 0 0 28px rgba(120, 215, 239, 0.13);
+  text-shadow: 0 0 30px rgba(97, 229, 251, 0.16);
 }
 
 .bible-greeting span {
@@ -7241,7 +7241,7 @@ body:has(.bible-home)::before {
     background:
       radial-gradient(circle at 50% 74%, rgba(202, 241, 255, 0.28) 0 2px, rgba(120, 215, 239, 0.13) 3px 8%, transparent 19%),
       linear-gradient(180deg, rgba(3, 7, 13, 0.22) 0%, rgba(3, 7, 13, 0.08) 54%, rgba(3, 7, 13, 0.62) 100%),
-      url("./assets/earth-horizon-v2.png") center top / auto 300px no-repeat;
+      url("./assets/earth-horizon-master.png") center top / auto 300px no-repeat;
     -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 82%, transparent 100%);
     mask-image: linear-gradient(to bottom, #000 0%, #000 82%, transparent 100%);
   }
@@ -7316,7 +7316,7 @@ body:has(.bible-home)::before {
     background:
       radial-gradient(circle at 50% 58%, rgba(202, 241, 255, 0.28) 0 2px, rgba(120, 215, 239, 0.12) 3px 9%, transparent 21%),
       linear-gradient(180deg, rgba(3, 7, 13, 0.3) 0%, rgba(3, 7, 13, 0.08) 46%, rgba(3, 7, 13, 0.66) 100%),
-      url("./assets/earth-horizon-v2.png") center bottom / 1500px auto no-repeat;
+      url("./assets/earth-horizon-master.png") center bottom / 1500px auto no-repeat;
     -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 82%, transparent 100%);
     mask-image: linear-gradient(to bottom, #000 0%, #000 82%, transparent 100%);
   }
