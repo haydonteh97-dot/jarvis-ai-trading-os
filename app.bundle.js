@@ -2280,56 +2280,50 @@
 		const question = questionWithTopic(state.jarvis.question);
 		const snapshot = getMockMarketSnapshot(question);
 		const analysis = state.chartUpload.analysis || state.jarvis.quickAnalysis;
-		const quote = analysis?.livePrice ? {
-			price: analysis.livePrice,
-			currency: analysis.liveCurrency,
-			type: analysis.instrumentType,
-			symbol: analysis.pair
-		} : { price: null };
-		const plan = analysis?.tradePlan || buildPreliminaryTradePlan(snapshot, quote, question);
+		const plan = analysis?.tradePlan;
 		const risk = analysis?.tradingSafety || buildRiskProfile(question, snapshot);
-		const routeMacro = state.jarvis.route?.macro;
 		const bias = /bearish/i.test(snapshot.marketBias) ? "Bearish" : /bullish/i.test(snapshot.marketBias) ? "Bullish" : "Neutral";
 		const trend = bias === "Bullish" ? "Bullish Trend" : bias === "Bearish" ? "Bearish Trend" : "Range Market";
 		const targets = plan?.takeProfitZones || [];
 		const isZh = state.jarvis.language === "zh";
+		const hasChart = Boolean(state.chartUpload.previewUrl);
+		const hasVerifiedMarket = Boolean(analysis?.livePrice && analysis?.liveSource === "live");
+		const hasVerifiedLevels = hasChart && hasVerifiedMarket;
+		const preliminaryStructure = isZh ? ["仅为初步分析", "上传图表以确认市场结构", "流动性区域尚未验证"] : ["Preliminary analysis only", "Upload chart to confirm market structure", "Liquidity zones are not verified"];
+		const chartStructure = [analysis?.marketStructure, analysis?.liquidity, analysis?.liquidityStatus].filter(Boolean).slice(0, 2);
+		const entryStatus = isZh ? "等待已验证市场数据" : "Awaiting verified market data";
+		const preliminaryStatus = isZh ? "仅为初步分析" : "Preliminary analysis only";
+		const uploadStatus = isZh ? "上传图表以获得准确的 Entry / SL / TP" : "Upload chart for accurate Entry / SL / TP";
+		const jarvisView = !hasChart || !hasVerifiedMarket ? isZh ? "初步观点 • 需要图表与已验证数据" : "Preliminary View • Chart Required" : bias === "Bullish" ? isZh ? "偏多观点 • 需要确认" : "Bullish Bias • Confirmation Required" : bias === "Bearish" ? isZh ? "偏空观点 • 需要确认" : "Bearish Bias • Confirmation Required" : isZh ? "中性 • 仅观察" : "Neutral • Monitor Only";
+		const nextStep = !hasChart ? isZh ? "上传图表作为 setup 背景" : "Upload chart for setup context" : !hasVerifiedMarket ? isZh ? "等待已验证数据后重新评估" : "Reassess when verified market data is available" : isZh ? "等待结构确认" : "Wait for structure confirmation";
 		return {
+			language: state.jarvis.language,
 			instrument: snapshot.symbol,
 			bias,
 			confidence: snapshot.confidence,
-			confidenceLabel: `${confidenceLabel(snapshot.confidence)} Confidence`,
+			confidenceLabel: hasVerifiedLevels ? `${confidenceLabel(snapshot.confidence)} Confidence` : isZh ? "初步信心" : "Preliminary Confidence",
 			trend,
-			structure: [
-				snapshot.marketStructure,
-				snapshot.liquidityStatus,
-				`${isZh ? "关键区域" : "Key zone"}: ${snapshot.keyZones?.[0] || "Awaiting confirmed level"}`
-			].filter(Boolean),
+			structure: hasChart ? [...chartStructure, isZh ? "图表背景已附加，结论仍需确认" : "Chart context attached; confirmation is still required"].filter(Boolean) : preliminaryStructure,
 			tradePlan: {
-				entry: plan?.potentialEntryZone || "Awaiting chart confirmation",
-				stopLoss: plan?.stopLossReference || "Set beyond structural invalidation",
-				takeProfit1: targets[0] || "Not set without confirmation",
-				takeProfit2: targets[1] || "Not set without confirmation",
-				takeProfit3: targets[2] || "Runner only after TP2 confirmation",
-				riskReward: plan?.estimatedRR || risk.riskReward || "Recalculate after confirmation"
+				entry: hasVerifiedLevels ? plan?.potentialEntryZone : entryStatus,
+				stopLoss: hasVerifiedLevels ? plan?.stopLossReference : preliminaryStatus,
+				takeProfit1: hasVerifiedLevels ? targets[0] : uploadStatus,
+				takeProfit2: hasVerifiedLevels ? targets[1] : entryStatus,
+				takeProfit3: hasVerifiedLevels ? targets[2] || (isZh ? "TP2 后保留 runner" : "Runner only after TP2 confirmation") : entryStatus,
+				riskReward: hasVerifiedLevels ? plan?.estimatedRR || risk.riskReward : preliminaryStatus
 			},
-			macro: [
-				routeMacro?.professionalView || `${snapshot.session}: monitor confirmed macro releases before execution.`,
-				routeMacro?.riskLevel ? `Event risk: ${routeMacro.riskLevel}` : `Macro risk: ${risk.newsRisk || "Check calendar"}`,
-				routeMacro?.watchNext || "Do not anticipate unverified economic data."
-			].filter(Boolean).slice(0, 3),
-			news: [
-				"Verified live news feed is not connected; no headline is fabricated.",
-				`Prioritise news that directly affects ${snapshot.symbol}.`,
-				"Recheck high-impact events before entry."
-			].slice(0, 5),
+			macro: [isZh ? "已验证宏观数据源尚未连接。" : "Verified macro source not connected."],
+			news: [isZh ? "实时新闻数据源尚未连接。" : "Live news source not connected."],
 			reasoning: [
-				`Trend: ${trend}.`,
-				`Structure: ${snapshot.marketStructure}.`,
-				`Liquidity: ${snapshot.liquidityStatus}`,
-				`Macro: ${routeMacro?.professionalView || "Wait for verified event context."}`,
-				`Risk: ${risk.overallRisk || snapshot.risk}; ${String(risk.riskReward || plan?.riskRewardAssessment || "confirmation required").replace(/[.]+$/, "")}.`
+				isZh ? `趋势：${trend}。` : `Trend: ${trend}.`,
+				isZh ? `市场结构：${hasChart ? chartStructure[0] || "图表已附加，等待确认" : "缺少图表背景"}。` : `Market structure: ${hasChart ? chartStructure[0] || "chart attached; confirmation required" : "chart context is missing"}.`,
+				isZh ? `流动性：${hasChart ? chartStructure[1] || "需要确认" : "尚未验证"}。` : `Liquidity: ${hasChart ? chartStructure[1] || "confirmation required" : "not verified"}.`,
+				isZh ? "宏观与新闻：数据源未连接，不作事件推断。" : "Macro and news: sources are not connected, so no event claim is made.",
+				isZh ? `风险：${risk.overallRisk || snapshot.risk}；最终决定由交易员负责。` : `Risk: ${risk.overallRisk || snapshot.risk}; the final decision remains with the trader.`
 			],
-			freshness: analysis?.liveUpdatedAt || snapshot.lastUpdated || "Mock context",
+			jarvisView,
+			nextStep,
+			freshness: hasVerifiedMarket ? analysis.liveUpdatedAt || (isZh ? "刚更新" : "Recently updated") : isZh ? "初步 / 未验证来源" : "Preliminary / unverified sources",
 			disclaimer: analysis?.disclaimer || "JARVIS provides educational market analysis and risk guidance. The final trading decision remains the responsibility of the trader."
 		};
 	}
@@ -2453,7 +2447,7 @@
 		const steps = getThinkingSteps();
 		addChatMessage({
 			role: "jarvis",
-			text: steps[0],
+			text: mentorText("JARVIS is thinking...", "JARVIS 正在思考..."),
 			thinking: true,
 			thinkingIndex: 0,
 			thinkingSteps: steps
@@ -2461,16 +2455,16 @@
 	}
 	function getThinkingSteps() {
 		return state.jarvis.language === "zh" ? [
-			"思考中...",
 			"读取市场结构...",
 			"检查宏观事件...",
 			"读取市场新闻...",
+			"扫描流动性区域...",
 			"建立分析..."
 		] : [
-			"Thinking...",
 			"Reading market structure...",
 			"Checking macro events...",
 			"Reading market news...",
+			"Scanning liquidity zones...",
 			"Building analysis..."
 		];
 	}
@@ -2481,7 +2475,7 @@
 			if (thinkingIndex < 0) return;
 			state.jarvis.chat = state.jarvis.chat.map((item, itemIndex) => itemIndex === thinkingIndex ? {
 				...item,
-				text: steps[index],
+				text: mentorText("JARVIS is thinking...", "JARVIS 正在思考..."),
 				thinkingIndex: index,
 				thinkingSteps: steps
 			} : item);
@@ -3047,7 +3041,7 @@
 	}
 	function bindJarvisMentorActions(page) {
 		const form = page.querySelector(".jarvis-question-form");
-		const upload = page.querySelector("#jarvisUploadButton");
+		const uploadButtons = page.querySelectorAll("#jarvisUploadButton, #chartContextUploadButton");
 		const input = page.querySelector("#chartUploadInput");
 		bindBriefActions(page);
 		page.addEventListener("click", async (event) => {
@@ -3090,8 +3084,8 @@
 				refreshMissionControlOnly();
 			});
 		}
-		if (upload && input) {
-			upload.addEventListener("click", () => input.click());
+		if (uploadButtons.length && input) {
+			uploadButtons.forEach((button) => button.addEventListener("click", () => input.click()));
 			input.addEventListener("change", () => {
 				const file = input.files?.[0];
 				if (!file) return;
@@ -3100,16 +3094,20 @@
 					state.chartUpload.previewUrl = reader.result;
 					state.chartUpload.fileName = file.name;
 					state.chartUpload.analysis = null;
+					if (!state.jarvis.question) state.jarvis.question = mentorText("Analyse my chart", "分析我的图表");
+					state.jarvis.intent = "Chart Analysis";
 					state.jarvis.status = "analyzing";
 					state.jarvis.progressIndex = 0;
 					state.jarvis.mentorNote = mentorText("Chart received. I am reading the setup before giving a brief.", "图表已收到。我会先阅读结构，再给你简报。");
 					addChatMessage({
-						role: "jarvis",
-						text: state.jarvis.mentorNote
+						role: "user",
+						text: mentorText(`Chart attached: ${file.name}`, `已附加图表：${file.name}`)
 					});
+					addThinkingMessage();
 					state.jarvis.timeline = [...state.jarvis.timeline, mentorText("Chart uploaded", "Chart uploaded")];
 					localStorage.setItem("jarvis-chart-file-name", state.chartUpload.fileName);
 					localStorage.removeItem("jarvis-chart-analysis");
+					input.value = "";
 					render();
 					startJarvisAnalysis();
 				};
@@ -3129,11 +3127,7 @@
 		state.jarvis.showEntryZone = false;
 		state.jarvis.showWhy = false;
 		try {
-			for (let index = 0; index < analysisSteps.length; index += 1) {
-				state.jarvis.progressIndex = index;
-				render();
-				await new Promise((resolve) => setTimeout(resolve, 220));
-			}
+			await runThinkingSequence();
 			state.chartUpload.analysis = await analyzeChartUpload({
 				fileName: state.chartUpload.fileName,
 				previewUrl: state.chartUpload.previewUrl,
@@ -3154,14 +3148,13 @@
 				brief: state.chartUpload.analysis
 			});
 			updateConversationState(state.jarvis.route || {}, questionWithTopic(state.jarvis.question));
-			addChatMessage(finalJarvisMessage(state.jarvis.mentorNote, { suggestions: buildNextActions(state.jarvis.intent || "Chart Analysis") }));
+			replaceThinkingMessage(finalJarvisMessage(state.jarvis.mentorNote, { suggestions: buildNextActions(state.jarvis.intent || "Chart Analysis") }));
 			state.jarvis.timeline = [...state.jarvis.timeline, mentorText("Trading Brief built", "交易简报已建立")];
 			localStorage.setItem("jarvis-chart-analysis", JSON.stringify(state.chartUpload.analysis));
 		} catch (error) {
 			console.error(error);
 			state.jarvis.status = "error";
-			addChatMessage({
-				role: "jarvis",
+			replaceThinkingMessage({
 				text: mentorText("I could not complete the chart analysis. Upload a clearer screenshot with pair, timeframe, and price scale, then I will rebuild it.", "我无法完成这次图表分析。请上传更清楚的截图，包含品种、周期和价格刻度，我会重新建立简报。"),
 				attention: true
 			});
@@ -3586,16 +3579,18 @@
 		const emptySuggestions = isZh ? ["现在可以买 Gold 吗？", "分析 EURUSD", "今天的 CPI", "最新美联储新闻", "分析我的图表", "寻找交易机会"] : ["Can I buy Gold now?", "Analyse EURUSD", "Today's CPI", "Latest Fed News", "Analyse my chart", "Find opportunities"];
 		return `
     <section class="approved-workspace ask-page">
-      <div class="approved-page-head">
+      <div class="approved-page-head ask-page-heading">
+        <img class="ask-apex-logo" src="./assets/apex-logo-official.jpg" alt="APEX" />
         <div><h1>Ask JARVIS</h1><p>${isZh ? "您的 AI 交易助手" : "Your AI Trading Assistant"}</p></div>
       </div>
-      <section class="ask-layout">
+      <div class="suggested-actions ask-top-suggestions">${emptySuggestions.map((item) => `<button type="button" data-quick-prompt="${item}">${item}</button>`).join("")}</div>
+      <section class="ask-layout ask-layout-single">
         <article class="conversation-panel approved-conversation">
           <div class="chat-thread">
             ${state.jarvis.chat.length ? state.jarvis.chat.map(renderApprovedChatMessage).join("") : renderStarterJarvisBlock(brain)}
           </div>
           <form class="jarvis-question-form approved-chat-input" data-mode="mission">
-            <textarea id="jarvisQuestion" rows="2" placeholder="Ask follow-up question..."></textarea>
+            <textarea id="jarvisQuestion" rows="2" placeholder="${isZh ? "向 JARVIS 提问..." : "Ask JARVIS anything..."}"></textarea>
             <div class="jarvis-actions">
               <button class="ghost-button" id="jarvisUploadButton" type="button">${lineIcon("upload")} Upload Chart</button>
               <button class="ghost-button" type="button" disabled>${lineIcon("mic")} Voice</button>
@@ -3603,14 +3598,27 @@
             </div>
             <input id="chartUploadInput" class="hidden-file-input" type="file" accept="image/*" />
           </form>
-          ${state.jarvis.chat.length ? "" : `<div class="suggested-actions empty-chat-suggestions">${emptySuggestions.map((item) => `<button type="button" data-quick-prompt="${item}">${item}</button>`).join("")}</div>`}
+          ${chartContextControl()}
         </article>
-        <aside class="ask-side-panel">
-          ${uploadedChartPanel()}
-          ${tradingBriefPanel(brain)}
-        </aside>
       </section>
     </section>
+  `;
+	}
+	function chartContextControl() {
+		const isZh = state.jarvis.language === "zh";
+		const hasChart = Boolean(state.chartUpload.previewUrl);
+		return `
+    <details class="chart-context-control">
+      <summary>
+        <span class="chart-context-icon">${lineIcon("upload")}</span>
+        <span><strong>${isZh ? "上传图表" : "Upload Chart"}</strong><small>${isZh ? "需要 setup 背景时，上传当前图表。" : "Upload the current chart when the decision needs setup context."}</small></span>
+        <span class="chart-context-chevron">${lineIcon("send")}</span>
+      </summary>
+      <div class="chart-context-body">
+        ${hasChart ? `<img class="chart-preview mentor-preview" src="${state.chartUpload.previewUrl}" alt="Uploaded chart preview" /><p>${escapeHtml(state.chartUpload.fileName)}</p>` : `<p>${isZh ? "尚未附加图表。当前回答只使用可用的初步背景。" : "No chart is attached. The current response uses preliminary context only."}</p>`}
+        <button class="ghost-button" id="chartContextUploadButton" type="button">${lineIcon("upload")} ${hasChart ? isZh ? "更换图表" : "Replace Chart" : isZh ? "选择图表" : "Choose Chart"}</button>
+      </div>
+    </details>
   `;
 	}
 	function marketRadarPageContent() {
@@ -3987,28 +3995,40 @@
 	function renderAskJarvisResponse(model) {
 		const safe = (value) => escapeHtml(String(value ?? "Unavailable"));
 		const list = (items) => (items || []).map((item) => `<li>${safe(item)}</li>`).join("");
+		const isZh = model.language === "zh";
+		const labels = isZh ? {
+			brief: "交易简报", updated: "更新", bias: "市场方向", confidence: "信心", trend: "趋势", structure: "市场结构", plan: "交易计划", entry: "进场区域", stop: "止损", tp1: "止盈 1", tp2: "止盈 2", tp3: "止盈 3", rr: "风险回报", macro: "宏观摘要", news: "新闻摘要", reasoning: "AI 分析摘要", view: "JARVIS 观点", next: "下一步"
+		} : {
+			brief: "Trading Brief", updated: "Updated", bias: "Market Bias", confidence: "Confidence", trend: "Trend", structure: "Market Structure", plan: "Trade Plan", entry: "Entry Zone", stop: "Stop Loss", tp1: "Take Profit 1", tp2: "Take Profit 2", tp3: "Take Profit 3", rr: "Risk Reward", macro: "Macro Summary", news: "News Summary", reasoning: "AI Reasoning", view: "JARVIS View", next: "Next Step"
+		};
+		const displayBias = isZh ? { Bullish: "偏多", Bearish: "偏空", Neutral: "中性" }[model.bias] || model.bias : model.bias;
+		const displayTrend = isZh ? { "Strong Bullish Trend": "强势上升趋势", "Bullish Trend": "上升趋势", "Range Market": "区间市场", "Bearish Trend": "下降趋势", "Strong Bearish Trend": "强势下降趋势" }[model.trend] || model.trend : model.trend;
 		return `
     <section class="jarvis-market-brief">
-      <header class="brief-header"><div><span>Trading Brief</span><strong>${safe(model.instrument)}</strong></div><small>Updated ${safe(model.freshness)}</small></header>
+      <header class="brief-header"><div><span>${labels.brief}</span><strong>${safe(model.instrument)}</strong></div><small>${labels.updated} ${safe(model.freshness)}</small></header>
       <div class="brief-overview-grid">
-        <div><span>Market Bias</span><strong class="bias-${safe(model.bias).toLowerCase()}">${safe(model.bias)}</strong></div>
-        <div><span>Confidence</span><strong>${safe(model.confidence)}%</strong><small>${safe(model.confidenceLabel)}</small></div>
-        <div><span>Trend</span><strong>${safe(model.trend)}</strong></div>
+        <div><span>${labels.bias}</span><strong class="bias-${safe(model.bias).toLowerCase()}">${safe(displayBias)}</strong></div>
+        <div><span>${labels.confidence}</span><strong>${safe(model.confidence)}%</strong><small>${safe(model.confidenceLabel)}</small></div>
+        <div><span>${labels.trend}</span><strong>${safe(displayTrend)}</strong></div>
       </div>
-      <section class="brief-block"><h4>Market Structure</h4><ul class="structure-list">${list(model.structure)}</ul></section>
-      <section class="brief-block trade-plan-block"><h4>Trade Plan</h4><div class="trade-plan-grid">
-        <div><span>Entry</span><strong>${safe(model.tradePlan?.entry)}</strong></div>
-        <div><span>Stop Loss</span><strong>${safe(model.tradePlan?.stopLoss)}</strong></div>
-        <div><span>Take Profit 1</span><strong>${safe(model.tradePlan?.takeProfit1)}</strong></div>
-        <div><span>Take Profit 2</span><strong>${safe(model.tradePlan?.takeProfit2)}</strong></div>
-        <div><span>Take Profit 3</span><strong>${safe(model.tradePlan?.takeProfit3)}</strong></div>
-        <div><span>Risk Reward</span><strong>${safe(model.tradePlan?.riskReward)}</strong></div>
+      <section class="brief-block"><h4>${labels.structure}</h4><ul class="structure-list">${list(model.structure)}</ul></section>
+      <section class="brief-block trade-plan-block"><h4>${labels.plan}</h4><div class="trade-plan-grid">
+        <div><span>${labels.entry}</span><strong>${safe(model.tradePlan?.entry)}</strong></div>
+        <div><span>${labels.stop}</span><strong>${safe(model.tradePlan?.stopLoss)}</strong></div>
+        <div><span>${labels.tp1}</span><strong>${safe(model.tradePlan?.takeProfit1)}</strong></div>
+        <div><span>${labels.tp2}</span><strong>${safe(model.tradePlan?.takeProfit2)}</strong></div>
+        <div><span>${labels.tp3}</span><strong>${safe(model.tradePlan?.takeProfit3)}</strong></div>
+        <div><span>${labels.rr}</span><strong>${safe(model.tradePlan?.riskReward)}</strong></div>
       </div></section>
       <div class="brief-two-column">
-        <section class="brief-block"><h4>Macro Summary</h4><ul>${list(model.macro)}</ul></section>
-        <section class="brief-block"><h4>News Summary</h4><ul>${list(model.news)}</ul></section>
+        <section class="brief-block"><h4>${labels.macro}</h4><ul>${list(model.macro)}</ul></section>
+        <section class="brief-block"><h4>${labels.news}</h4><ul>${list(model.news)}</ul></section>
       </div>
-      <section class="brief-block reasoning-block"><h4>AI Reasoning</h4><ul>${list(model.reasoning)}</ul></section>
+      <section class="brief-block reasoning-block"><h4>${labels.reasoning}</h4><ul>${list(model.reasoning)}</ul></section>
+      <div class="brief-decision-grid">
+        <section><span>${labels.view}</span><strong>${safe(model.jarvisView)}</strong></section>
+        <section><span>${labels.next}</span><strong>${safe(model.nextStep)}</strong></section>
+      </div>
       <p class="brief-disclaimer">${safe(model.disclaimer)}</p>
     </section>
   `;

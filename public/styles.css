@@ -8057,3 +8057,246 @@ body:has(.bible-home)::before {
     order: 2;
   }
 }
+
+/* Sprint 3 S3-001 incremental correction: approved single-flow Ask workspace. */
+.ask-page {
+  display: grid;
+  gap: 14px;
+}
+
+.ask-page-heading {
+  justify-content: flex-start !important;
+  gap: 14px !important;
+}
+
+.ask-apex-logo {
+  flex: 0 0 70px;
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.ask-top-suggestions {
+  width: min(1120px, 100%);
+  margin: 0;
+}
+
+.ask-page .ask-layout-single {
+  display: block !important;
+  width: min(1120px, 100%);
+}
+
+.ask-page .ask-layout-single .approved-conversation {
+  display: grid;
+  grid-template-rows: auto auto auto;
+  gap: 14px;
+  min-height: 0;
+  padding: 0;
+  border: 0 !important;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none;
+}
+
+.ask-page .ask-layout-single .chat-thread {
+  align-content: start;
+  min-height: 120px;
+  max-height: none;
+  overflow: visible;
+  padding: 4px 0;
+}
+
+.ask-page .ask-layout-single .approved-ai-response {
+  width: 100%;
+  max-width: none;
+}
+
+.brief-decision-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid var(--bible-border);
+}
+
+.brief-decision-grid section {
+  display: grid;
+  gap: 7px;
+  min-height: 74px;
+  padding: 14px 16px;
+}
+
+.brief-decision-grid section:first-child {
+  border-right: 1px solid var(--bible-border);
+}
+
+.brief-decision-grid span {
+  color: var(--bible-secondary) !important;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.brief-decision-grid strong {
+  color: var(--bible-cyan-strong) !important;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.ask-page .approved-chat-input {
+  position: static;
+  bottom: auto;
+}
+
+.chart-context-control {
+  overflow: hidden;
+  border: 1px solid var(--bible-border);
+  border-radius: 16px;
+  background: rgba(5, 15, 26, 0.76);
+}
+
+.chart-context-control summary {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) 30px;
+  align-items: center;
+  gap: 12px;
+  min-height: 76px;
+  padding: 10px 14px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.chart-context-control summary::-webkit-details-marker {
+  display: none;
+}
+
+.chart-context-control summary > span:nth-child(2) {
+  display: grid;
+  gap: 4px;
+}
+
+.chart-context-control summary strong {
+  color: var(--bible-text) !important;
+  font-size: 13px;
+}
+
+.chart-context-control summary small {
+  color: var(--bible-secondary) !important;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.chart-context-icon,
+.chart-context-chevron {
+  display: grid;
+  place-items: center;
+  color: var(--bible-cyan) !important;
+}
+
+.chart-context-icon {
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(120, 215, 239, 0.16);
+  border-radius: 12px;
+  background: rgba(120, 215, 239, 0.06);
+}
+
+.chart-context-chevron {
+  transition: transform 220ms ease;
+}
+
+.chart-context-chevron .line-icon {
+  width: 16px;
+  height: 16px;
+  transform: rotate(90deg);
+}
+
+.chart-context-control[open] .chart-context-chevron {
+  transform: rotate(90deg);
+}
+
+.chart-context-body {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-top: 1px solid var(--bible-border);
+}
+
+.chart-context-body p {
+  margin: 0;
+  color: var(--bible-secondary) !important;
+  font-size: 12px;
+}
+
+.chart-context-body .chart-preview {
+  width: min(100%, 620px);
+  max-height: 360px;
+  object-fit: contain;
+  border: 1px solid var(--bible-border);
+  border-radius: 12px;
+  background: #02070d;
+}
+
+.chart-context-body button {
+  justify-self: start;
+  min-height: 40px;
+}
+
+@media (max-width: 820px) {
+  .ask-page {
+    gap: 12px;
+  }
+
+  .ask-page-heading {
+    display: grid !important;
+    grid-template-columns: 58px minmax(0, 1fr);
+    align-items: center !important;
+  }
+
+  .ask-apex-logo {
+    width: 58px;
+    height: 58px;
+  }
+
+  .ask-top-suggestions {
+    flex-wrap: nowrap !important;
+    max-width: 100%;
+    padding-bottom: 5px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .ask-top-suggestions::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ask-top-suggestions button {
+    flex: 0 0 auto;
+  }
+
+  .ask-page .ask-layout-single .approved-conversation {
+    min-height: 0;
+    padding: 0;
+  }
+
+  .ask-page .ask-layout-single .chat-thread {
+    min-height: 100px;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .brief-decision-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .brief-decision-grid section:first-child {
+    border-right: 0;
+    border-bottom: 1px solid var(--bible-border);
+  }
+
+  .chart-context-control summary {
+    grid-template-columns: 40px minmax(0, 1fr) 28px;
+    min-height: 72px;
+    padding-inline: 12px;
+  }
+}
