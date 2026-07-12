@@ -2224,13 +2224,15 @@
 			"Compare another pair"
 		];
 		if (isTradePlanIntent(intent) || isBuyIntent(intent) || isSellIntent(intent)) return isZh ? [
-			`${instrument} entry 在哪里？`,
-			`${instrument} TP SL`,
-			"风险健康吗？"
+			"为什么这样判断？",
+			"显示图表分析",
+			"这笔交易风险多高？",
+			"替代情景是什么？"
 		] : [
-			`${instrument} entry zone?`,
-			`${instrument} TP SL`,
-			"Is the risk healthy?"
+			"Why this view?",
+			"Show chart analysis",
+			"How risky is this trade?",
+			"Alternative scenario"
 		];
 		if (intent === "Macro Question") return isZh ? [
 			"CPI 会影响 Gold 吗？",
@@ -2270,7 +2272,65 @@
 		state.jarvis.conversationState.previousJarvisAnswer = finalText;
 		return {
 			text: finalText,
+			responseModel: tradeRelated ? buildAskJarvisResponseModel() : null,
 			suggestions
+		};
+	}
+	function buildAskJarvisResponseModel() {
+		const question = questionWithTopic(state.jarvis.question);
+		const snapshot = getMockMarketSnapshot(question);
+		const analysis = state.chartUpload.analysis || state.jarvis.quickAnalysis;
+		const quote = analysis?.livePrice ? {
+			price: analysis.livePrice,
+			currency: analysis.liveCurrency,
+			type: analysis.instrumentType,
+			symbol: analysis.pair
+		} : { price: null };
+		const plan = analysis?.tradePlan || buildPreliminaryTradePlan(snapshot, quote, question);
+		const risk = analysis?.tradingSafety || buildRiskProfile(question, snapshot);
+		const routeMacro = state.jarvis.route?.macro;
+		const bias = /bearish/i.test(snapshot.marketBias) ? "Bearish" : /bullish/i.test(snapshot.marketBias) ? "Bullish" : "Neutral";
+		const trend = bias === "Bullish" ? "Bullish Trend" : bias === "Bearish" ? "Bearish Trend" : "Range Market";
+		const targets = plan?.takeProfitZones || [];
+		const isZh = state.jarvis.language === "zh";
+		return {
+			instrument: snapshot.symbol,
+			bias,
+			confidence: snapshot.confidence,
+			confidenceLabel: `${confidenceLabel(snapshot.confidence)} Confidence`,
+			trend,
+			structure: [
+				snapshot.marketStructure,
+				snapshot.liquidityStatus,
+				`${isZh ? "关键区域" : "Key zone"}: ${snapshot.keyZones?.[0] || "Awaiting confirmed level"}`
+			].filter(Boolean),
+			tradePlan: {
+				entry: plan?.potentialEntryZone || "Awaiting chart confirmation",
+				stopLoss: plan?.stopLossReference || "Set beyond structural invalidation",
+				takeProfit1: targets[0] || "Not set without confirmation",
+				takeProfit2: targets[1] || "Not set without confirmation",
+				takeProfit3: targets[2] || "Runner only after TP2 confirmation",
+				riskReward: plan?.estimatedRR || risk.riskReward || "Recalculate after confirmation"
+			},
+			macro: [
+				routeMacro?.professionalView || `${snapshot.session}: monitor confirmed macro releases before execution.`,
+				routeMacro?.riskLevel ? `Event risk: ${routeMacro.riskLevel}` : `Macro risk: ${risk.newsRisk || "Check calendar"}`,
+				routeMacro?.watchNext || "Do not anticipate unverified economic data."
+			].filter(Boolean).slice(0, 3),
+			news: [
+				"Verified live news feed is not connected; no headline is fabricated.",
+				`Prioritise news that directly affects ${snapshot.symbol}.`,
+				"Recheck high-impact events before entry."
+			].slice(0, 5),
+			reasoning: [
+				`Trend: ${trend}.`,
+				`Structure: ${snapshot.marketStructure}.`,
+				`Liquidity: ${snapshot.liquidityStatus}`,
+				`Macro: ${routeMacro?.professionalView || "Wait for verified event context."}`,
+				`Risk: ${risk.overallRisk || snapshot.risk}; ${String(risk.riskReward || plan?.riskRewardAssessment || "confirmation required").replace(/[.]+$/, "")}.`
+			],
+			freshness: analysis?.liveUpdatedAt || snapshot.lastUpdated || "Mock context",
+			disclaimer: analysis?.disclaimer || "JARVIS provides educational market analysis and risk guidance. The final trading decision remains the responsibility of the trader."
 		};
 	}
 	function buildStructuredTradeResponse({ question, intent, snapshot, quote, brief }) {
@@ -2379,6 +2439,8 @@
 			chatThread.innerHTML = state.jarvis.chat.map((item) => approvedConversation ? renderApprovedChatMessage(item) : chatMessageMarkup(item)).join("");
 			chatThread.scrollTop = chatThread.scrollHeight;
 		}
+		const emptySuggestions = document.querySelector(".empty-chat-suggestions");
+		if (emptySuggestions) emptySuggestions.hidden = state.jarvis.chat.length > 0;
 		const brief = document.querySelector(".ask-side-panel .trading-brief, .mission-right .trading-brief");
 		if (brief && state.brainData) {
 			const wrapper = document.createElement("div");
@@ -2388,11 +2450,44 @@
 		}
 	}
 	function addThinkingMessage() {
+		const steps = getThinkingSteps();
 		addChatMessage({
 			role: "jarvis",
-			text: mentorText("Understanding your question...", "正在理解你的问题..."),
-			thinking: true
+			text: steps[0],
+			thinking: true,
+			thinkingIndex: 0,
+			thinkingSteps: steps
 		});
+	}
+	function getThinkingSteps() {
+		return state.jarvis.language === "zh" ? [
+			"思考中...",
+			"读取市场结构...",
+			"检查宏观事件...",
+			"读取市场新闻...",
+			"建立分析..."
+		] : [
+			"Thinking...",
+			"Reading market structure...",
+			"Checking macro events...",
+			"Reading market news...",
+			"Building analysis..."
+		];
+	}
+	async function runThinkingSequence() {
+		const steps = getThinkingSteps();
+		for (let index = 0; index < steps.length; index += 1) {
+			const thinkingIndex = state.jarvis.chat.findIndex((item) => item.thinking);
+			if (thinkingIndex < 0) return;
+			state.jarvis.chat = state.jarvis.chat.map((item, itemIndex) => itemIndex === thinkingIndex ? {
+				...item,
+				text: steps[index],
+				thinkingIndex: index,
+				thinkingSteps: steps
+			} : item);
+			refreshMissionControlOnly();
+			await new Promise((resolve) => setTimeout(resolve, 240));
+		}
 	}
 	function replaceThinkingMessage(message) {
 		const index = state.jarvis.chat.findIndex((item) => item.thinking);
@@ -2558,6 +2653,7 @@
 		if (state.jarvis.isProcessing && !alreadyLocked) return;
 		if (!alreadyLocked) state.jarvis.isProcessing = true;
 		try {
+			await runThinkingSequence();
 			const contextQuestion = questionWithTopic(state.jarvis.question);
 			const route = routeJarvisInput({
 				input: state.jarvis.question || contextQuestion,
@@ -2954,18 +3050,17 @@
 		const upload = page.querySelector("#jarvisUploadButton");
 		const input = page.querySelector("#chartUploadInput");
 		bindBriefActions(page);
-		page.querySelectorAll("[data-quick-prompt]").forEach((button) => {
-			button.addEventListener("click", async () => {
-				if (state.jarvis.isProcessing) return;
-				const prompt = button.dataset.quickPrompt;
-				const startedOutsideJarvis = state.activePage !== "JARVIS";
-				beginMission(prompt);
-				state.jarvis.isProcessing = true;
-				if (startedOutsideJarvis) await renderFromTop();
-				else refreshMissionControlOnly();
-				await processMissionQuestion({ alreadyLocked: true });
-				refreshMissionControlOnly();
-			});
+		page.addEventListener("click", async (event) => {
+			const button = event.target.closest("[data-quick-prompt]");
+			if (!button || !page.contains(button) || state.jarvis.isProcessing) return;
+			const prompt = button.dataset.quickPrompt;
+			const startedOutsideJarvis = state.activePage !== "JARVIS";
+			beginMission(prompt);
+			state.jarvis.isProcessing = true;
+			if (startedOutsideJarvis) await renderFromTop();
+			else refreshMissionControlOnly();
+			await processMissionQuestion({ alreadyLocked: true });
+			refreshMissionControlOnly();
 		});
 		if (form) {
 			const textarea = page.querySelector("#jarvisQuestion");
@@ -3487,10 +3582,12 @@
   `;
 	}
 	function jarvisPageContent(brain) {
+		const isZh = state.jarvis.language === "zh";
+		const emptySuggestions = isZh ? ["现在可以买 Gold 吗？", "分析 EURUSD", "今天的 CPI", "最新美联储新闻", "分析我的图表", "寻找交易机会"] : ["Can I buy Gold now?", "Analyse EURUSD", "Today's CPI", "Latest Fed News", "Analyse my chart", "Find opportunities"];
 		return `
     <section class="approved-workspace ask-page">
       <div class="approved-page-head">
-        <div><h1>Ask JARVIS</h1><p>Your AI Trading Assistant</p></div>
+        <div><h1>Ask JARVIS</h1><p>${isZh ? "您的 AI 交易助手" : "Your AI Trading Assistant"}</p></div>
       </div>
       <section class="ask-layout">
         <article class="conversation-panel approved-conversation">
@@ -3506,15 +3603,7 @@
             </div>
             <input id="chartUploadInput" class="hidden-file-input" type="file" accept="image/*" />
           </form>
-          <div class="suggested-actions">
-            ${[
-			"Analyze XAUUSD",
-			"Check DXY",
-			"Latest News",
-			"Economic Calendar",
-			"Find Opportunities"
-		].map((item) => `<button type="button" data-quick-prompt="${item}">${item}</button>`).join("")}
-          </div>
+          ${state.jarvis.chat.length ? "" : `<div class="suggested-actions empty-chat-suggestions">${emptySuggestions.map((item) => `<button type="button" data-quick-prompt="${item}">${item}</button>`).join("")}</div>`}
         </article>
         <aside class="ask-side-panel">
           ${uploadedChartPanel()}
@@ -3871,21 +3960,64 @@
   `;
 	}
 	function renderApprovedChatMessage(item) {
-		if (item.role === "user") return `<div class="approved-user-question"><p>${item.text}</p><span>${mockUser.name.slice(0, 1).toUpperCase()}</span></div>`;
+		if (item.role === "user") return `<div class="approved-user-question"><p>${escapeHtml(item.text)}</p><span>${mockUser.name.slice(0, 1).toUpperCase()}</span></div>`;
+		if (item.thinking) return renderThinkingComponent(item);
+		const mentorIntro = item.responseModel ? mentorText("I've reviewed the context. Here's the structured market view.", "我已经检查了当前背景。以下是结构化市场观点。") : item.text;
 		return `
     <div class="approved-ai-response ${item.attention ? "attention" : ""}">
       <div class="response-head">${lineIcon("spark")}<strong>JARVIS</strong></div>
-      <p>${item.text}</p>
-      ${item.thinking ? `<span class="typing-dots"><i></i><i></i><i></i></span>` : structuredAiSummary()}
+      <p class="mentor-answer">${escapeHtml(mentorIntro)}</p>
+      ${item.responseModel ? renderAskJarvisResponse(item.responseModel) : ""}
+      ${Array.isArray(item.suggestions) && item.suggestions.length ? `<div class="quick-prompts">${item.suggestions.slice(0, 4).map((suggestion) => `<button type="button" data-quick-prompt="${escapeHtml(suggestion)}">${escapeHtml(suggestion)}</button>`).join("")}</div>` : ""}
     </div>
+  `;
+	}
+	function renderThinkingComponent(item) {
+		const steps = item.thinkingSteps || getThinkingSteps();
+		const activeIndex = Number(item.thinkingIndex || 0);
+		return `
+    <div class="approved-ai-response jarvis-thinking-response" aria-live="polite">
+      <div class="response-head">${lineIcon("spark")}<strong>JARVIS</strong><span>${escapeHtml(item.text)}</span></div>
+      <div class="thinking-sequence">
+        ${steps.map((step, index) => `<div class="thinking-step ${index < activeIndex ? "complete" : index === activeIndex ? "active" : "pending"}"><i></i><span>${escapeHtml(step)}</span></div>`).join("")}
+      </div>
+    </div>
+  `;
+	}
+	function renderAskJarvisResponse(model) {
+		const safe = (value) => escapeHtml(String(value ?? "Unavailable"));
+		const list = (items) => (items || []).map((item) => `<li>${safe(item)}</li>`).join("");
+		return `
+    <section class="jarvis-market-brief">
+      <header class="brief-header"><div><span>Trading Brief</span><strong>${safe(model.instrument)}</strong></div><small>Updated ${safe(model.freshness)}</small></header>
+      <div class="brief-overview-grid">
+        <div><span>Market Bias</span><strong class="bias-${safe(model.bias).toLowerCase()}">${safe(model.bias)}</strong></div>
+        <div><span>Confidence</span><strong>${safe(model.confidence)}%</strong><small>${safe(model.confidenceLabel)}</small></div>
+        <div><span>Trend</span><strong>${safe(model.trend)}</strong></div>
+      </div>
+      <section class="brief-block"><h4>Market Structure</h4><ul class="structure-list">${list(model.structure)}</ul></section>
+      <section class="brief-block trade-plan-block"><h4>Trade Plan</h4><div class="trade-plan-grid">
+        <div><span>Entry</span><strong>${safe(model.tradePlan?.entry)}</strong></div>
+        <div><span>Stop Loss</span><strong>${safe(model.tradePlan?.stopLoss)}</strong></div>
+        <div><span>Take Profit 1</span><strong>${safe(model.tradePlan?.takeProfit1)}</strong></div>
+        <div><span>Take Profit 2</span><strong>${safe(model.tradePlan?.takeProfit2)}</strong></div>
+        <div><span>Take Profit 3</span><strong>${safe(model.tradePlan?.takeProfit3)}</strong></div>
+        <div><span>Risk Reward</span><strong>${safe(model.tradePlan?.riskReward)}</strong></div>
+      </div></section>
+      <div class="brief-two-column">
+        <section class="brief-block"><h4>Macro Summary</h4><ul>${list(model.macro)}</ul></section>
+        <section class="brief-block"><h4>News Summary</h4><ul>${list(model.news)}</ul></section>
+      </div>
+      <section class="brief-block reasoning-block"><h4>AI Reasoning</h4><ul>${list(model.reasoning)}</ul></section>
+      <p class="brief-disclaimer">${safe(model.disclaimer)}</p>
+    </section>
   `;
 	}
 	function renderStarterJarvisBlock(brain) {
 		return `
-    <div class="approved-ai-response">
+    <div class="approved-ai-response ask-empty-state">
       <div class="response-head">${lineIcon("spark")}<strong>JARVIS</strong></div>
-      <p>Ask me about Gold, BTC, market structure, risk, or upload a chart for setup context.</p>
-      ${structuredAiSummary(brain)}
+      <p>Ask naturally about Gold, BTC, market structure, macro events, news, risk, or a previous trade.</p>
     </div>
   `;
 	}

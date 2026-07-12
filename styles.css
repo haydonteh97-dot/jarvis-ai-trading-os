@@ -7611,3 +7611,449 @@ body:has(.bible-home)::before {
     display: inline-grid;
   }
 }
+
+/* Sprint 3 S3-001: Ask JARVIS workspace components only. */
+.ask-page {
+  padding-top: 18px;
+}
+
+.ask-page .ask-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px) !important;
+  gap: 18px !important;
+}
+
+.ask-page .approved-conversation {
+  min-width: 0;
+  min-height: calc(100dvh - 168px);
+  padding: 18px;
+  border: 1px solid var(--bible-border);
+  border-radius: 18px;
+  background: rgba(4, 13, 23, 0.72);
+  backdrop-filter: blur(18px);
+}
+
+.ask-page .chat-thread {
+  align-content: start;
+  min-height: 420px;
+  max-height: calc(100dvh - 365px);
+  gap: 16px;
+  padding: 4px 6px 16px;
+  scrollbar-color: rgba(120, 215, 239, 0.2) transparent;
+}
+
+.ask-page .approved-user-question {
+  max-width: min(74%, 620px);
+  padding: 13px 14px 13px 18px;
+  border-color: rgba(120, 215, 239, 0.18) !important;
+  border-radius: 16px !important;
+  background: rgba(120, 215, 239, 0.07) !important;
+}
+
+.ask-page .approved-user-question p {
+  margin: 3px 0 0;
+  color: var(--bible-text) !important;
+  line-height: 1.5;
+}
+
+.ask-page .approved-user-question span {
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  color: #03111a !important;
+  background: var(--bible-cyan) !important;
+}
+
+.ask-page .approved-ai-response {
+  width: min(100%, 880px);
+  padding: 18px;
+  border-radius: 18px !important;
+  background: rgba(6, 17, 29, 0.9) !important;
+}
+
+.ask-page .response-head {
+  min-height: 24px;
+  color: var(--bible-cyan-strong) !important;
+}
+
+.ask-page .response-head > span {
+  margin-left: auto;
+  color: var(--bible-secondary) !important;
+  font-size: 12px;
+}
+
+.ask-page .mentor-answer {
+  margin: 13px 0 0;
+  color: #d7e2e9 !important;
+  font-size: 14px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.jarvis-thinking-response {
+  max-width: 520px !important;
+  overflow: hidden;
+}
+
+.thinking-sequence {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.thinking-step {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  align-items: center;
+  gap: 9px;
+  min-height: 22px;
+  color: var(--bible-muted);
+  font-size: 12px;
+  transition: color 220ms ease, opacity 220ms ease, transform 220ms ease;
+}
+
+.thinking-step i {
+  width: 7px;
+  height: 7px;
+  border: 1px solid rgba(120, 215, 239, 0.24);
+  border-radius: 50%;
+  background: transparent;
+  transition: background 220ms ease, box-shadow 220ms ease;
+}
+
+.thinking-step.pending {
+  opacity: 0.4;
+}
+
+.thinking-step.complete {
+  color: #7f94a5;
+}
+
+.thinking-step.complete i {
+  background: rgba(85, 212, 165, 0.75);
+  border-color: rgba(85, 212, 165, 0.75);
+}
+
+.thinking-step.active {
+  color: var(--bible-cyan-strong);
+  transform: translateX(2px);
+}
+
+.thinking-step.active i {
+  background: var(--bible-cyan);
+  border-color: var(--bible-cyan);
+  box-shadow: 0 0 0 5px rgba(120, 215, 239, 0.08), 0 0 12px rgba(120, 215, 239, 0.32);
+  animation: jarvisThinkingPulse 900ms ease-in-out infinite;
+}
+
+@keyframes jarvisThinkingPulse {
+  50% { transform: scale(0.72); opacity: 0.62; }
+}
+
+.jarvis-market-brief {
+  margin-top: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(120, 215, 239, 0.14);
+  border-radius: 16px;
+  background: rgba(3, 11, 20, 0.62);
+}
+
+.brief-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 16px;
+  border-bottom: 1px solid var(--bible-border);
+}
+
+.brief-header div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brief-header span,
+.brief-header small,
+.brief-overview-grid span,
+.brief-overview-grid small,
+.trade-plan-grid span {
+  color: var(--bible-secondary) !important;
+  font-size: 10px;
+}
+
+.brief-header strong {
+  color: var(--bible-cyan-strong) !important;
+  font-size: 13px;
+}
+
+.brief-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-bottom: 1px solid var(--bible-border);
+}
+
+.brief-overview-grid > div {
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  min-height: 82px;
+  padding: 13px 16px;
+  border-right: 1px solid var(--bible-border);
+}
+
+.brief-overview-grid > div:last-child {
+  border-right: 0;
+}
+
+.brief-overview-grid strong {
+  color: var(--bible-text) !important;
+  font-size: 16px;
+}
+
+.brief-overview-grid .bias-bullish {
+  color: var(--bible-success) !important;
+}
+
+.brief-overview-grid .bias-bearish {
+  color: var(--bible-danger) !important;
+}
+
+.brief-overview-grid .bias-neutral {
+  color: var(--bible-warning) !important;
+}
+
+.brief-block {
+  padding: 15px 16px;
+  border-bottom: 1px solid var(--bible-border);
+}
+
+.brief-block h4 {
+  margin: 0 0 11px;
+  color: var(--bible-cyan-strong) !important;
+  font-size: 10px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.brief-block ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.brief-block li {
+  color: #aebfcb !important;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.structure-list {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 0 !important;
+  list-style: none;
+}
+
+.structure-list li {
+  padding: 10px 11px;
+  border-left: 2px solid rgba(120, 215, 239, 0.28);
+  background: rgba(120, 215, 239, 0.035);
+}
+
+.trade-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
+}
+
+.trade-plan-grid > div {
+  display: grid;
+  gap: 5px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(151, 196, 219, 0.08);
+}
+
+.trade-plan-grid strong {
+  color: var(--bible-text) !important;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.brief-two-column {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-bottom: 1px solid var(--bible-border);
+}
+
+.brief-two-column .brief-block {
+  border-bottom: 0;
+}
+
+.brief-two-column .brief-block:first-child {
+  border-right: 1px solid var(--bible-border);
+}
+
+.reasoning-block {
+  border-bottom: 0;
+}
+
+.brief-disclaimer {
+  margin: 0;
+  padding: 12px 16px;
+  color: var(--bible-muted) !important;
+  font-size: 10px;
+  line-height: 1.5;
+  border-top: 1px solid rgba(151, 196, 219, 0.08);
+}
+
+.ask-page .quick-prompts,
+.ask-page .suggested-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ask-page .empty-chat-suggestions[hidden] {
+  display: none !important;
+}
+
+.ask-page .quick-prompts button,
+.ask-page .suggested-actions button {
+  min-height: 34px;
+  padding: 0 12px !important;
+  color: var(--bible-secondary) !important;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--bible-border) !important;
+  border-radius: 999px !important;
+  background: rgba(10, 23, 37, 0.72) !important;
+}
+
+.ask-page .quick-prompts button:hover,
+.ask-page .suggested-actions button:hover {
+  color: var(--bible-cyan-strong) !important;
+  border-color: var(--bible-border-active) !important;
+}
+
+.ask-page .approved-chat-input {
+  z-index: 3;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 10px 10px 10px 16px;
+  border-color: rgba(120, 215, 239, 0.2) !important;
+  background: rgba(4, 14, 24, 0.96) !important;
+  backdrop-filter: blur(18px);
+}
+
+.ask-page .approved-chat-input textarea {
+  min-width: 0;
+  min-height: 54px !important;
+  padding: 12px 6px !important;
+  resize: none;
+}
+
+.ask-page .approved-chat-input .jarvis-actions {
+  align-items: center;
+}
+
+.ask-page .ask-empty-state {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+@media (max-width: 1080px) {
+  .ask-page .ask-layout {
+    grid-template-columns: minmax(0, 1fr) 310px !important;
+  }
+
+  .structure-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 820px) {
+  .ask-page {
+    padding-top: 4px;
+  }
+
+  .ask-page .ask-layout {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .ask-page .approved-conversation {
+    min-height: calc(100dvh - 145px);
+    padding: 12px;
+  }
+
+  .ask-page .chat-thread {
+    min-height: 48dvh;
+    max-height: 58dvh;
+    padding-inline: 0;
+  }
+
+  .ask-page .approved-user-question {
+    max-width: 88%;
+  }
+
+  .ask-page .approved-ai-response {
+    padding: 14px;
+  }
+
+  .brief-overview-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .brief-overview-grid > div {
+    min-height: 64px;
+    border-right: 0;
+    border-bottom: 1px solid var(--bible-border);
+  }
+
+  .brief-overview-grid > div:last-child {
+    border-bottom: 0;
+  }
+
+  .trade-plan-grid,
+  .brief-two-column {
+    grid-template-columns: 1fr;
+  }
+
+  .brief-two-column .brief-block:first-child {
+    border-right: 0;
+    border-bottom: 1px solid var(--bible-border);
+  }
+
+  .ask-page .approved-chat-input {
+    position: sticky;
+    bottom: 8px;
+    grid-template-columns: 1fr;
+  }
+
+  .ask-page .approved-chat-input .jarvis-actions {
+    display: grid !important;
+    grid-template-columns: minmax(116px, 1fr) minmax(82px, 0.78fr) 48px;
+    gap: 7px !important;
+    align-items: center;
+    justify-content: stretch;
+  }
+
+  .ask-page .approved-chat-input .jarvis-actions button {
+    width: auto !important;
+    min-width: 0;
+    min-height: 46px;
+    padding-inline: 8px !important;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .ask-page .approved-chat-input .jarvis-actions button[type="submit"] {
+    width: 48px !important;
+    padding: 0 !important;
+  }
+
+  .ask-page .ask-side-panel {
+    order: 2;
+  }
+}
