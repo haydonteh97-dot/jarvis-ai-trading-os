@@ -1,4 +1,6 @@
 const { test, expect } = require('@playwright/test');
+const fs = require('fs');
+const path = require('path');
 
 async function login(page) {
   await page.goto('http://127.0.0.1:4174/', { waitUntil: 'networkidle' });
@@ -147,4 +149,165 @@ test.describe('Sprint 4 AI Analysis', () => {
       expect(state.maxCardWidth).toBeLessThanOrEqual(state.viewport);
     });
   }
+});
+
+async function openUploadChart(page, mobile = false) {
+  if (mobile) await page.getByRole('button', { name: 'Open navigation' }).click();
+  await page.getByRole('button', { name: 'Upload Chart' }).click();
+  await expect(page.locator('.upload-chart-page')).toBeVisible();
+}
+
+const validPngPath = path.resolve(__dirname, '..', 'assets', 'earth-horizon-master.png');
+const validJpegBuffer = fs.readFileSync(path.resolve(__dirname, '..', 'assets', 'apex-logo-official.jpg'));
+const onePixelPng = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z7xkAAAAASUVORK5CYII=', 'base64');
+
+test.describe('Sprint 5 Upload Chart', () => {
+  test('validates files and completes an honest chart workflow on desktop', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await login(page);
+    await openUploadChart(page);
+    await expect(page.getByText('Upload a chart to begin visual analysis.', { exact: true })).toBeVisible();
+    await expect(page.locator('.s5-analysis-grid')).toHaveCount(0);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(200);
+    await page.screenshot({ path: 'artifacts/upload-chart-desktop-empty.png', fullPage: false });
+
+    const input = page.locator('#chartUploadInput');
+    await input.setInputFiles({ name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('not a chart') });
+    await expect(page.getByText('Upload a PNG, JPG, JPEG or WEBP image.', { exact: true })).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: 'artifacts/upload-chart-invalid-file.png', fullPage: false });
+
+    await input.setInputFiles({ name: 'tiny-chart.png', mimeType: 'image/png', buffer: onePixelPng });
+    await expect(page.getByText('JARVIS could not read enough chart information. Upload a clearer image.', { exact: true })).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({ path: 'artifacts/upload-chart-unreadable.png', fullPage: false });
+
+    await input.setInputFiles(validPngPath);
+    await expect(page.locator('.s5-chart-preview img')).toBeVisible();
+    await expect(page.locator('#analyzeChartButton')).toBeEnabled();
+    expect(await page.locator('.s5-chart-preview img').evaluate((image) => getComputedStyle(image).objectFit)).toBe('contain');
+    await page.locator('#chartAssetSelect').selectOption('XAUUSD');
+    await page.locator('#chartTimeframeSelect').selectOption('H1');
+    await page.locator('#chartFocusInput').fill('Review visible structure and explain what cannot be verified.');
+    await expect(page.locator('#chartFocusCount')).toHaveText(/60\/300|61\/300|62\/300/);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(150);
+    await page.screenshot({ path: 'artifacts/upload-chart-desktop-preview.png', fullPage: false });
+
+    await page.locator('#zoomChartButton').click();
+    await expect(page.locator('.s5-preview-modal')).toBeVisible();
+    await page.locator('#closeChartPreview').click();
+    await expect(page.locator('.s5-preview-modal')).toHaveCount(0);
+
+    await page.locator('#analyzeChartButton').click();
+    await expect(page.getByText('JARVIS is analysing your chart...', { exact: true })).toBeVisible();
+    await expect(page.locator('#analyzeChartButton')).toBeDisabled();
+    await page.screenshot({ path: 'artifacts/upload-chart-analysing.png', fullPage: false });
+    await expect(page.getByText('Analysis checks complete', { exact: true })).toBeVisible({ timeout: 5000 });
+    await expect(page.locator('.s5-analysis-grid .s5-module')).toHaveCount(13);
+    await expect(page.getByText('Exact Price Unavailable', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('Chart vision not connected', { exact: true })).toBeVisible();
+    await expect(page.getByText('External Verification Required', { exact: true })).toBeVisible();
+    await page.screenshot({ path: 'artifacts/upload-chart-desktop-complete.png', fullPage: true });
+
+    await page.locator('#openChartInAiAnalysis').click();
+    await expect(page.locator('.ai-analysis-page')).toBeVisible();
+    await expect(page.locator('#analysisAssetSelect')).toHaveValue('XAUUSD');
+    await expect(page.locator('#analysisTimeframeSelect')).toHaveValue('H1');
+  });
+
+  test('accepts supported image formats and rejects oversized or corrupt files', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await login(page);
+    await openUploadChart(page);
+    const input = page.locator('#chartUploadInput');
+    const webpDataUrl = await page.evaluate(() => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 640;
+      canvas.height = 360;
+      const context = canvas.getContext('2d');
+      context.fillStyle = '#06111b';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.strokeStyle = '#78d7ef';
+      context.lineWidth = 3;
+      context.beginPath();
+      context.moveTo(20, 280);
+      context.lineTo(150, 190);
+      context.lineTo(290, 230);
+      context.lineTo(450, 110);
+      context.lineTo(620, 150);
+      context.stroke();
+      return canvas.toDataURL('image/webp', 0.9);
+    });
+    const validWebpBuffer = Buffer.from(webpDataUrl.split(',')[1], 'base64');
+    const supported = [
+      { name: 'chart.png', mimeType: 'image/png', buffer: fs.readFileSync(validPngPath) },
+      { name: 'chart.jpg', mimeType: 'image/jpeg', buffer: validJpegBuffer },
+      { name: 'chart.jpeg', mimeType: 'image/jpeg', buffer: validJpegBuffer },
+      { name: 'chart.webp', mimeType: 'image/webp', buffer: validWebpBuffer },
+    ];
+    for (const file of supported) {
+      await input.setInputFiles(file);
+      await expect(page.locator('.s5-chart-preview img'), file.name).toBeVisible();
+      await page.locator('#removeChartButton').click();
+      await expect(page.locator('.s5-chart-preview')).toHaveCount(0);
+    }
+
+    await input.setInputFiles({ name: 'oversized.png', mimeType: 'image/png', buffer: Buffer.alloc(10 * 1024 * 1024 + 1) });
+    await expect(page.getByText('The selected image exceeds the supported file size.', { exact: true })).toBeVisible();
+    await input.setInputFiles({ name: 'corrupt.png', mimeType: 'image/png', buffer: Buffer.from('corrupt-image') });
+    await expect(page.getByText('The selected image is corrupt or unreadable.', { exact: true })).toBeVisible();
+  });
+
+  test('preserves chart context when handing off to Ask JARVIS', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await login(page);
+    await openUploadChart(page);
+    await page.locator('#chartUploadInput').setInputFiles(validPngPath);
+    await page.locator('#chartAssetSelect').selectOption('BTCUSD');
+    await page.locator('#chartTimeframeSelect').selectOption('M15');
+    await page.locator('#analyzeChartButton').click();
+    await expect(page.getByText('Analysis checks complete', { exact: true })).toBeVisible({ timeout: 5000 });
+    await page.locator('#askJarvisAboutChart').click();
+    await expect(page.locator('.ask-page')).toBeVisible();
+    await expect(page.locator('#jarvisQuestion')).toHaveValue(/BTCUSD M15 chart/);
+  });
+
+  test('mobile upload, preview and completed state have no horizontal overflow', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await login(page);
+    await openUploadChart(page, true);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(250);
+    await page.screenshot({ path: 'artifacts/upload-chart-mobile-empty.png', fullPage: false });
+    await page.locator('#chartUploadInput').setInputFiles(validPngPath);
+    await expect(page.locator('.s5-chart-preview img')).toBeVisible();
+    await page.locator('#chartAssetSelect').selectOption('XAUUSD');
+    await page.locator('#chartTimeframeSelect').selectOption('H1');
+    await page.screenshot({ path: 'artifacts/upload-chart-mobile-preview.png', fullPage: false });
+    await page.locator('#analyzeChartButton').click();
+    await expect(page.getByText('Analysis checks complete', { exact: true })).toBeVisible({ timeout: 5000 });
+    const mobile = await page.evaluate(() => ({
+      width: document.documentElement.clientWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+      previewWidth: document.querySelector('.s5-chart-preview')?.getBoundingClientRect().width,
+    }));
+    expect(mobile.scrollWidth).toBeLessThanOrEqual(mobile.width);
+    expect(mobile.previewWidth).toBeLessThanOrEqual(mobile.width);
+    await page.screenshot({ path: 'artifacts/upload-chart-mobile-complete.png', fullPage: true });
+  });
+
+  test('430px mobile layout stays inside the viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 430, height: 932 });
+    await login(page);
+    await openUploadChart(page, true);
+    await page.locator('#chartUploadInput').setInputFiles(validPngPath);
+    await page.locator('#chartAssetSelect').selectOption('EURUSD');
+    await page.locator('#chartTimeframeSelect').selectOption('M15');
+    await page.locator('#analyzeChartButton').click();
+    await expect(page.getByText('Analysis checks complete', { exact: true })).toBeVisible({ timeout: 5000 });
+    const mobile = await page.evaluate(() => ({ width: document.documentElement.clientWidth, scrollWidth: document.documentElement.scrollWidth }));
+    expect(mobile.scrollWidth).toBeLessThanOrEqual(mobile.width);
+  });
 });

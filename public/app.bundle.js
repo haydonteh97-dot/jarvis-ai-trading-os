@@ -1492,6 +1492,19 @@
 		chartUpload: {
 			previewUrl: "",
 			fileName: localStorage.getItem("jarvis-chart-file-name") || "",
+			fileSize: 0,
+			fileType: "",
+			width: 0,
+			height: 0,
+			status: "empty",
+			error: "",
+			asset: "Unknown",
+			timeframe: "Unknown",
+			focus: "",
+			isAnalyzing: false,
+			analysisStep: -1,
+			result: null,
+			expanded: false,
 			analysis: JSON.parse(localStorage.getItem("jarvis-chart-analysis") || "null"),
 			history: JSON.parse(localStorage.getItem("jarvis-chart-history") || "[]")
 		},
@@ -2879,51 +2892,239 @@
 	}
 	function bindChartUploadActions(page) {
 		const input = page.querySelector("#chartUploadInput");
-		const choose = page.querySelector("#chooseChartButton");
 		const analyze = page.querySelector("#analyzeChartButton");
-		const save = page.querySelector("#saveChartAnalysisButton");
-		if (!input || !choose || !analyze || !save) return;
-		choose.addEventListener("click", () => input.click());
-		input.addEventListener("change", () => {
+		if (!input) return;
+		const chooseButtons = page.querySelectorAll("#chooseChartButton, #replaceInvalidChartButton");
+		const replace = page.querySelector("#replaceChartButton");
+		const remove = page.querySelector("#removeChartButton");
+		const dropzone = page.querySelector(".s5-upload-dropzone");
+		const asset = page.querySelector("#chartAssetSelect");
+		const timeframe = page.querySelector("#chartTimeframeSelect");
+		const focus = page.querySelector("#chartFocusInput");
+		chooseButtons.forEach((button) => button.addEventListener("click", () => input.click()));
+		replace?.addEventListener("click", () => input.click());
+		input.addEventListener("change", async () => {
 			const file = input.files?.[0];
 			if (!file) return;
-			const reader = new FileReader();
-			reader.onload = () => {
-				state.chartUpload.previewUrl = reader.result;
-				state.chartUpload.fileName = file.name;
-				state.chartUpload.analysis = null;
-				localStorage.setItem("jarvis-chart-file-name", state.chartUpload.fileName);
-				localStorage.removeItem("jarvis-chart-analysis");
-				render();
-			};
-			reader.readAsDataURL(file);
+			await acceptChartFile(file);
+			input.value = "";
 		});
-		analyze.addEventListener("click", async () => {
-			if (!state.chartUpload.previewUrl) return;
-			try {
-				analyze.disabled = true;
-				analyze.textContent = "Building...";
-				state.chartUpload.analysis = await analyzeChartUpload({
-					fileName: state.chartUpload.fileName,
-					previewUrl: state.chartUpload.previewUrl,
-					question: questionWithTopic(state.jarvis.question),
-					previousMission: state.chartUpload.history[0] || null,
-					journal: state.chartUpload.history
-				});
-				localStorage.setItem("jarvis-chart-analysis", JSON.stringify(state.chartUpload.analysis));
-			} catch (error) {
-				console.error(error);
-				state.jarvis.mentorNote = "Chart analysis failed. Please try again with a clearer screenshot.";
-			} finally {
-				render();
+		dropzone?.addEventListener("dragover", (event) => {
+			event.preventDefault();
+			dropzone.classList.add("is-dragging");
+		});
+		dropzone?.addEventListener("keydown", (event) => {
+			if (event.key === "Enter" || event.key === " ") {
+				event.preventDefault();
+				input.click();
 			}
 		});
-		save.addEventListener("click", () => {
-			if (!state.chartUpload.analysis) return;
-			state.chartUpload.history = [buildMissionRecord(state.chartUpload.analysis), ...state.chartUpload.history].slice(0, 8);
-			localStorage.setItem("jarvis-chart-history", JSON.stringify(state.chartUpload.history));
+		dropzone?.addEventListener("dragleave", () => dropzone.classList.remove("is-dragging"));
+		dropzone?.addEventListener("drop", async (event) => {
+			event.preventDefault();
+			dropzone.classList.remove("is-dragging");
+			const files = event.dataTransfer?.files;
+			if (files?.length) await acceptChartFile(files[0]);
+		});
+		remove?.addEventListener("click", clearChartUpload);
+		page.querySelector("#dismissChartError")?.addEventListener("click", () => {
+			state.chartUpload.error = "";
+			state.chartUpload.status = "empty";
 			render();
 		});
+		asset?.addEventListener("change", () => {
+			state.chartUpload.asset = asset.value;
+		});
+		timeframe?.addEventListener("change", () => {
+			state.chartUpload.timeframe = timeframe.value;
+		});
+		focus?.addEventListener("input", () => {
+			state.chartUpload.focus = focus.value.slice(0, 300);
+			const counter = page.querySelector("#chartFocusCount");
+			if (counter) counter.textContent = `${state.chartUpload.focus.length}/300`;
+		});
+		analyze?.addEventListener("click", runChartVisualAnalysis);
+		page.querySelector("#retryChartAnalysis")?.addEventListener("click", runChartVisualAnalysis);
+		page.querySelector("#zoomChartButton")?.addEventListener("click", () => {
+			state.chartUpload.expanded = true;
+			render();
+		});
+		page.querySelector("#closeChartPreview")?.addEventListener("click", () => {
+			state.chartUpload.expanded = false;
+			render();
+		});
+		page.querySelector("#askJarvisAboutChart")?.addEventListener("click", async () => {
+			const chart = state.chartUpload;
+			const isZh = state.jarvis.language === "zh";
+			state.jarvis.topic = chart.asset === "Unknown" ? "Uploaded chart" : chart.asset;
+			state.jarvis.conversationState.currentAsset = chart.asset;
+			state.jarvis.conversationState.timeframe = chart.timeframe;
+			state.jarvis.conversationState.currentTradeStatus = "Preliminary Visual Analysis / Insufficient Context";
+			state.jarvis.conversationState.missingInformation = ["Connected chart vision", "Verified market data", "External news verification"];
+			state.jarvis.question = isZh ? `解释我上传的 ${chart.asset} ${chart.timeframe} 图表。目前视觉服务未连接，请只说明可验证内容和下一步。` : `Explain my uploaded ${chart.asset} ${chart.timeframe} chart. Chart vision is not connected, so use only verified context and explain the next step.`;
+			state.activePage = "JARVIS";
+			await renderFromTop();
+			const contextualInput = document.querySelector(".ask-page #jarvisQuestion");
+			if (contextualInput) contextualInput.value = state.jarvis.question;
+		});
+		page.querySelector("#openChartInAiAnalysis")?.addEventListener("click", () => {
+			if (state.chartUpload.asset !== "Unknown") state.approvedUi.analysisAsset = state.chartUpload.asset;
+			if (state.chartUpload.timeframe !== "Unknown" && ["D1", "H4", "H1", "M15"].includes(state.chartUpload.timeframe)) state.approvedUi.analysisTimeframe = state.chartUpload.timeframe;
+			state.activePage = "AIAnalysis";
+			renderFromTop();
+		});
+	}
+	function resetChartAnalysisState() {
+		state.chartUpload.analysis = null;
+		state.chartUpload.result = null;
+		state.chartUpload.analysisStep = -1;
+		state.chartUpload.isAnalyzing = false;
+		localStorage.removeItem("jarvis-chart-analysis");
+	}
+	function clearChartUpload() {
+		state.chartUpload.previewUrl = "";
+		state.chartUpload.fileName = "";
+		state.chartUpload.fileSize = 0;
+		state.chartUpload.fileType = "";
+		state.chartUpload.width = 0;
+		state.chartUpload.height = 0;
+		state.chartUpload.status = "empty";
+		state.chartUpload.error = "";
+		state.chartUpload.expanded = false;
+		resetChartAnalysisState();
+		localStorage.removeItem("jarvis-chart-file-name");
+		renderFromTop();
+	}
+	function chartUploadError(message, status = "error") {
+		state.chartUpload.status = status;
+		state.chartUpload.error = message;
+		state.chartUpload.previewUrl = "";
+		state.chartUpload.fileName = "";
+		state.chartUpload.fileSize = 0;
+		state.chartUpload.fileType = "";
+		state.chartUpload.width = 0;
+		state.chartUpload.height = 0;
+		resetChartAnalysisState();
+		render();
+	}
+	async function acceptChartFile(file) {
+		const isZh = state.jarvis.language === "zh";
+		const allowedTypes = ["image/png", "image/jpeg", "image/webp"];
+		const allowedExtension = /\.(png|jpe?g|webp)$/i.test(file.name || "");
+		if (!allowedTypes.includes(file.type) || !allowedExtension) {
+			chartUploadError(isZh ? "请上传 PNG、JPG、JPEG 或 WEBP 图片。" : "Upload a PNG, JPG, JPEG or WEBP image.");
+			return;
+		}
+		if (!file.size) {
+			chartUploadError(isZh ? "所选文件为空或已损坏。" : "The selected file is empty or corrupt.");
+			return;
+		}
+		if (file.size > 10 * 1024 * 1024) {
+			chartUploadError(isZh ? "所选图片超过支持的文件大小。" : "The selected image exceeds the supported file size.");
+			return;
+		}
+		state.chartUpload.status = "validating";
+		state.chartUpload.error = "";
+		await render();
+		try {
+			const previewUrl = await new Promise((resolve, reject) => {
+				const reader = new FileReader();
+				reader.onerror = () => reject(new Error("read-failed"));
+				reader.onload = () => resolve(reader.result);
+				reader.readAsDataURL(file);
+			});
+			const dimensions = await new Promise((resolve, reject) => {
+				const image = new Image();
+				image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight });
+				image.onerror = () => reject(new Error("decode-failed"));
+				image.src = previewUrl;
+			});
+			if (dimensions.width < 320 || dimensions.height < 180) {
+				chartUploadError(isZh ? "JARVIS 无法读取足够的图表信息。请上传更清晰的图片。" : "JARVIS could not read enough chart information. Upload a clearer image.", "unreadable");
+				return;
+			}
+			state.chartUpload.previewUrl = previewUrl;
+			state.chartUpload.fileName = file.name;
+			state.chartUpload.fileSize = file.size;
+			state.chartUpload.fileType = file.type;
+			state.chartUpload.width = dimensions.width;
+			state.chartUpload.height = dimensions.height;
+			state.chartUpload.status = "ready";
+			state.chartUpload.error = "";
+			resetChartAnalysisState();
+			localStorage.setItem("jarvis-chart-file-name", state.chartUpload.fileName);
+			await render();
+		} catch (error) {
+			console.error("Chart upload validation failed", error);
+			chartUploadError(isZh ? "所选图片已损坏或无法读取。" : "The selected image is corrupt or unreadable.");
+		}
+	}
+	function buildSafeChartResult() {
+		const chart = state.chartUpload;
+		const isZh = state.jarvis.language === "zh";
+		const chartQuality = chart.width >= 1200 && chart.height >= 600 ? isZh ? "清晰" : "Clear" : chart.width >= 640 && chart.height >= 360 ? isZh ? "可接受" : "Acceptable" : isZh ? "低质量" : "Low Quality";
+		return {
+			asset: chart.asset,
+			timeframe: chart.timeframe,
+			chartQuality,
+			assetDetection: chart.asset === "Unknown" ? isZh ? "未检测" : "Not Detected" : isZh ? "用户确认" : "User Confirmed",
+			timeframeDetection: chart.timeframe === "Unknown" ? isZh ? "未检测" : "Not Detected" : isZh ? "用户确认" : "User Confirmed",
+			priceScale: isZh ? "未验证" : "Not Verified",
+			structureVisibility: isZh ? "不足" : "Insufficient",
+			reliability: isZh ? "背景不足" : "Insufficient Context",
+			bias: isZh ? "中性" : "Neutral",
+			mode: isZh ? "背景不足" : "Insufficient Context",
+			trend: isZh ? "不明确" : "Unclear",
+			trendStrength: isZh ? "不明确" : "Unclear",
+			setupStatus: isZh ? "背景不足" : "Insufficient Context",
+			source: isZh ? "用户提供图表 • 初步视觉分析" : "User-Provided Chart • Preliminary Visual Analysis",
+			structure: isZh ? "视觉分析服务未连接，无法验证图表结构。" : "Chart vision is not connected, so structure cannot be verified.",
+			latestShift: isZh ? "不可用" : "Unavailable",
+			confirmation: isZh ? "需要连接视觉分析" : "Connected chart vision required",
+			invalidation: isZh ? "精确价格不可用" : "Exact price unavailable",
+			nextConfirmation: isZh ? "连接图表视觉服务或稍后重试" : "Connect chart vision or retry when the service is available"
+		};
+	}
+	async function runChartVisualAnalysis() {
+		const chart = state.chartUpload;
+		const isZh = state.jarvis.language === "zh";
+		if (!chart.previewUrl || chart.status !== "ready" && chart.status !== "complete" && chart.status !== "analysis-error" || chart.isAnalyzing) return;
+		chart.isAnalyzing = true;
+		chart.error = "";
+		chart.status = "analyzing";
+		chart.analysisStep = 0;
+		await render();
+		try {
+			for (let step = 0; step < 6; step += 1) {
+				chart.analysisStep = step;
+				await render();
+				await new Promise((resolve) => setTimeout(resolve, 220));
+			}
+			chart.result = buildSafeChartResult();
+			chart.analysis = {
+				pair: chart.asset,
+				instrument: chart.asset,
+				timeframe: chart.timeframe,
+				bias: "Neutral",
+				confidence: 0,
+				confidenceLabel: "Insufficient Context",
+				marketStructure: chart.result.structure,
+				keyZones: [isZh ? "精确价格不可用" : "Exact price unavailable"],
+				risk: "Insufficient Context",
+				recommendation: chart.result.nextConfirmation,
+				analysisSource: "User-Provided Chart / Preliminary Visual Analysis",
+				preliminary: true
+			};
+			chart.status = "complete";
+			localStorage.setItem("jarvis-chart-analysis", JSON.stringify(chart.analysis));
+		} catch (error) {
+			console.error("Chart analysis failed", error);
+			chart.status = "analysis-error";
+			chart.error = isZh ? "图表分析暂时不可用。请重试。" : "Chart analysis is temporarily unavailable. Please retry.";
+		} finally {
+			chart.isAnalyzing = false;
+			await render();
+		}
 	}
 	function bindWatchlistActions(page) {
 		page.querySelectorAll("[data-watchlist-filter]").forEach((button) => {
@@ -3645,51 +3846,82 @@
   `;
 	}
 	function uploadChartPageContent(brain) {
-		const analysis = state.chartUpload.analysis || state.jarvis.quickAnalysis;
-		const mode = state.approvedUi.analysisMode;
+		const chart = state.chartUpload;
+		const isZh = state.jarvis.language === "zh";
+		const hasChart = Boolean(chart.previewUrl);
+		const result = chart.result;
+		const isAnalyzing = chart.isAnalyzing || chart.status === "analyzing";
+		const analysisSteps = isZh ? ["检查图表质量...", "识别资产与周期...", "读取市场结构...", "扫描流动性与关键区域...", "评估两种情景...", "建立分析摘要..."] : ["Checking chart quality...", "Identifying asset and timeframe...", "Reading market structure...", "Scanning liquidity and key zones...", "Evaluating scenarios...", "Building analysis summary..."];
+		const formatSize = (bytes) => bytes ? `${(bytes / 1024 / 1024).toFixed(bytes >= 1024 * 1024 ? 2 : 3)} MB` : "—";
+		const row = (label, value, tone = "") => `<div class="s5-data-row"><span>${label}</span><strong class="${tone}">${value || (isZh ? "不可用" : "Unavailable")}</strong></div>`;
+		const notAvailable = isZh ? "不可用" : "Not Available";
+		const exactUnavailable = isZh ? "精确价格不可用" : "Exact Price Unavailable";
+		const insufficient = isZh ? "背景不足" : "Insufficient Context";
+		const chartOptions = ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "BTCUSD", "Unknown"];
+		const timeframeOptions = ["D1", "H4", "H1", "M30", "M15", "M5", "Unknown"];
 		return `
-    <section class="approved-workspace">
-      <div class="approved-page-head">
-        <div><h1>AI Analysis</h1><p>Unified analysis workspace</p></div>
-        <button class="soft-action" id="chooseChartButton" type="button">${lineIcon("upload")} Upload Chart</button>
-      </div>
-      <div class="approved-tabs">${[
-			"Chart Analysis",
-			"Market Analysis",
-			"Compare Assets"
-		].map((item) => `<button class="${item === mode ? "active" : ""}" type="button" data-analysis-mode="${item}">${item}</button>`).join("")}</div>
-      <section class="analysis-workspace">
-        <div class="analysis-main">
-          <div class="analysis-controls">
-            <select aria-label="Asset"><option>Gold / XAUUSD</option><option>BTCUSD</option><option>EURUSD</option><option>NAS100</option></select>
-            <select aria-label="Timeframe"><option>H1</option><option>M15</option><option>H4</option><option>D1</option></select>
-            <button class="ghost-button" id="analyzeChartButton" type="button" ${state.chartUpload.previewUrl ? "" : "disabled"}>Analyse</button>
-            <button class="ghost-button" type="button" data-quick-prompt="Generate trade plan">Generate Trade Plan</button>
-          </div>
-          <div class="chart-stage">
-            ${state.chartUpload.previewUrl ? `<img class="chart-preview large" src="${state.chartUpload.previewUrl}" alt="Uploaded chart preview" />` : mockChartCanvas()}
-            <div class="chart-toolbar">
-              ${[
-			"Trend",
-			"Zone",
-			"Liquidity",
-			"Entry",
-			"SL",
-			"TP"
-		].map((item) => `<button>${item}</button>`).join("")}
-            </div>
-          </div>
-          <input id="chartUploadInput" class="hidden-file-input" type="file" accept="image/*" />
+    <section class="approved-workspace upload-chart-page">
+      <header class="s5-page-head">
+        <div><h1>${isZh ? "上传图表" : "Upload Chart"}</h1><p>${isZh ? "上传图表，让 JARVIS 进行视觉分析。" : "Upload your chart for visual analysis by JARVIS."}</p><small>${isZh ? "JARVIS 只分析图片中可见的图表背景，结果取决于图片质量与显示信息。" : "JARVIS analyses the visible chart context. Results depend on image quality and the information shown."}</small></div>
+      </header>
+      <input id="chartUploadInput" class="hidden-file-input" type="file" accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp" aria-label="${isZh ? "选择交易图表图片" : "Choose trading chart image"}" />
+      ${chart.error ? `<section class="s5-error-banner" role="alert"><div><strong>${chart.status === "unreadable" ? isZh ? "无法读取图表" : "Unreadable chart" : isZh ? "无法使用所选文件" : "Selected file cannot be used"}</strong><p>${escapeHtml(chart.error)}</p></div><div><button id="replaceInvalidChartButton" type="button">${isZh ? "选择其他图表" : "Choose another chart"}</button><button id="dismissChartError" type="button">${isZh ? "取消分析" : "Cancel analysis"}</button></div></section>` : ""}
+      ${!hasChart ? `<section class="s5-empty-upload">
+        <div class="s5-upload-dropzone" tabindex="0" role="group" aria-label="${isZh ? "拖放或选择图表图片" : "Drag and drop or choose chart image"}">
+          <span>${lineIcon("upload")}</span><h2>${isZh ? "上传图表开始视觉分析" : "Upload a chart to begin visual analysis."}</h2>
+          <p>${isZh ? "拖放图表，或点击选择文件" : "Drag and drop your chart or click to browse"}</p>
+          <small>PNG, JPG, JPEG, WEBP • ${isZh ? "最大 10 MB" : "Maximum 10 MB"}</small>
+          <button id="chooseChartButton" type="button">${isZh ? "选择文件" : "Choose File"}</button>
+          <em>${isZh ? "建议上传清晰图表，并显示资产、周期、价格刻度和近期结构。" : "For better analysis, upload a clear chart showing the asset, timeframe, price scale and recent structure."}</em>
         </div>
-        <aside class="analysis-side-panel">
-          ${analysisSidePanel(analysis, brain)}
-          <form class="jarvis-question-form chart-question" data-mode="mission">
-            <textarea id="jarvisQuestion" rows="2" placeholder="Ask JARVIS about this chart or asset..."></textarea>
-            <div class="jarvis-actions"><button type="submit">${lineIcon("send")}</button></div>
-          </form>
-          <button class="soft-action full" id="saveChartAnalysisButton" type="button" ${state.chartUpload.analysis ? "" : "disabled"}>Send to Trade Planner</button>
-        </aside>
-      </section>
+      </section>` : `<section class="s5-top-grid">
+        <article class="s5-module s5-upload-module">
+          <h2>1. ${isZh ? "上传图表" : "Upload Chart"}</h2>
+          <div class="s5-upload-dropzone compact" tabindex="0" role="group" aria-label="${isZh ? "替换图表" : "Replace chart"}"><span>${lineIcon("upload")}</span><p>${isZh ? "拖放或选择另一张图表" : "Drag and drop or choose another chart"}</p><button id="chooseChartButton" type="button">${isZh ? "替换图表" : "Replace Chart"}</button></div>
+        </article>
+        <article class="s5-module s5-preview-module">
+          <h2>2. ${isZh ? "图表预览" : "Chart Preview"}</h2>
+          <div class="s5-chart-preview"><img src="${chart.previewUrl}" alt="${isZh ? "已上传交易图表预览" : "Uploaded trading chart preview"}" /></div>
+          <div class="s5-preview-meta"><div><strong>${escapeHtml(chart.fileName)}</strong><span>${formatSize(chart.fileSize)} • ${chart.width}×${chart.height}</span><small>${isZh ? "验证完成" : "Validation complete"}</small></div><div class="s5-preview-actions"><button id="zoomChartButton" type="button" aria-label="${isZh ? "放大图表" : "Expand chart preview"}">${lineIcon("search")}</button><button id="replaceChartButton" type="button" aria-label="${isZh ? "替换图表" : "Replace chart"}">${lineIcon("upload")}</button><button id="removeChartButton" type="button" aria-label="${isZh ? "移除图表" : "Remove chart"}">${lineIcon("close")}</button></div></div>
+        </article>
+        <article class="s5-module s5-context-module">
+          <h2>3. ${isZh ? "图表背景" : "Chart Context"}</h2>
+          <div class="s5-context-selects"><label><span>${isZh ? "资产" : "Asset"}</span><select id="chartAssetSelect" aria-label="Chart asset">${chartOptions.map((value) => `<option value="${value}" ${value === chart.asset ? "selected" : ""}>${value}</option>`).join("")}</select></label><label><span>${isZh ? "周期" : "Timeframe"}</span><select id="chartTimeframeSelect" aria-label="Chart timeframe">${timeframeOptions.map((value) => `<option value="${value}" ${value === chart.timeframe ? "selected" : ""}>${value}</option>`).join("")}</select></label></div>
+          <label class="s5-focus-field"><span>${isZh ? "你希望 JARVIS 重点查看什么？" : "What would you like JARVIS to focus on?"}</span><textarea id="chartFocusInput" maxlength="300" rows="4" placeholder="${isZh ? "检查趋势、结构、流动性和潜在进场区域。" : "Check trend, structure, liquidity and potential entry zones."}">${escapeHtml(chart.focus)}</textarea><small id="chartFocusCount">${chart.focus.length}/300</small></label>
+          <button class="s5-analyse-button" id="analyzeChartButton" type="button" ${chart.status !== "ready" && chart.status !== "complete" && chart.status !== "analysis-error" || isAnalyzing ? "disabled" : ""}>4. ${isAnalyzing ? isZh ? "分析中..." : "Analysing..." : isZh ? "分析图表" : "Analyse Chart"}</button>
+          <p>${isZh ? "视觉引擎尚未连接时，JARVIS 只会返回诚实的不可用状态。" : "When chart vision is not connected, JARVIS returns honest unavailable states only."}</p>
+        </article>
+      </section>`}
+      ${hasChart && (isAnalyzing || result || chart.status === "analysis-error") ? `<section class="s5-analysis-grid">
+        <article class="s5-module s5-analysis-state">
+          <h2>5. ${isZh ? "JARVIS 分析状态" : "JARVIS Analysis State"}</h2>
+          <div class="s5-analysis-orb"><i></i></div>
+          <div><h3>${isAnalyzing ? isZh ? "JARVIS 正在分析你的图表..." : "JARVIS is analysing your chart..." : chart.status === "analysis-error" ? isZh ? "分析暂不可用" : "Analysis unavailable" : isZh ? "分析检查完成" : "Analysis checks complete"}</h3><ul>${analysisSteps.map((step, index) => `<li class="${!isAnalyzing || index < chart.analysisStep ? "complete" : index === chart.analysisStep ? "active" : "pending"}"><i></i>${step}<span>${!isAnalyzing || index < chart.analysisStep ? "✓" : index === chart.analysisStep ? isZh ? "检查中" : "In progress" : isZh ? "等待" : "Pending"}</span></li>`).join("")}</ul>${chart.status === "analysis-error" ? `<button id="retryChartAnalysis" type="button">${isZh ? "重试分析" : "Retry Analysis"}</button>` : ""}</div>
+        </article>
+        <article class="s5-module s5-quality-module">
+          <h2>6. ${isZh ? "图表质量与检测状态" : "Chart Quality & Detection Status"}</h2>
+          <div class="s5-quality-grid">${[
+			[isZh ? "图表质量" : "Chart Quality", result?.chartQuality || insufficient],
+			[isZh ? "资产检测" : "Asset Detection", result?.assetDetection || insufficient],
+			[isZh ? "周期检测" : "Timeframe Detection", result?.timeframeDetection || insufficient],
+			[isZh ? "价格刻度" : "Price Scale", result?.priceScale || insufficient],
+			[isZh ? "结构可见度" : "Structure Visibility", result?.structureVisibility || insufficient],
+			[isZh ? "分析可靠性" : "Analysis Reliability", result?.reliability || insufficient]
+		].map(([label, value]) => `<div><span>${label}</span><strong>${value}</strong></div>`).join("")}</div>
+        </article>
+        ${result ? `<article class="s5-module s5-summary-module"><h2>7. ${isZh ? "分析摘要" : "Analysis Summary"}</h2>${row(isZh ? "市场偏向" : "Market Bias", result.bias)}${row(isZh ? "市场模式" : "Market Mode", result.mode)}${row(isZh ? "趋势" : "Trend", result.trend)}${row(isZh ? "趋势强度" : "Trend Strength", result.trendStrength)}${row(isZh ? "Setup 状态" : "Setup Status", result.setupStatus)}${row(isZh ? "可靠性" : "Reliability", result.reliability)}${row(isZh ? "分析来源" : "Analysis Source", result.source)}</article>
+        <article class="s5-module s5-structure-module"><h2>8. ${isZh ? "市场结构" : "Market Structure"}</h2>${row(isZh ? "当前结构" : "Current Structure", result.structure)}${row(isZh ? "最新可见转变" : "Latest Visible Shift", result.latestShift)}${row(isZh ? "结构状态" : "Structure Status", insufficient)}${row(isZh ? "需要确认" : "Confirmation Required", result.confirmation)}${row(isZh ? "失效背景" : "Invalidation Context", result.invalidation)}</article>
+        <article class="s5-module s5-zones-module"><h2>9. ${isZh ? "流动性与关键区域" : "Liquidity & Key Zones"}</h2>${[isZh ? "买方流动性" : "Buy-side Liquidity", isZh ? "卖方流动性" : "Sell-side Liquidity", isZh ? "支撑区" : "Support Zone", isZh ? "阻力区" : "Resistance Zone", isZh ? "订单块" : "Order Block", isZh ? "公平价值缺口" : "Fair Value Gap", isZh ? "扫流动性状态" : "Sweep Status", isZh ? "突破 / 回测区" : "Breakout / Retest Zone"].map((label) => row(label, notAvailable)).join("")}</article>
+        <article class="s5-module s5-plan-module"><h2>10. ${isZh ? "潜在交易计划" : "Potential Trade Plan"}</h2>${row(isZh ? "Setup 状态" : "Setup Status", insufficient)}${row(isZh ? "方向偏向" : "Directional Bias", result.bias)}${row(isZh ? "进场区" : "Entry Zone", exactUnavailable)}${row(isZh ? "止损" : "Stop Loss", exactUnavailable)}${row(isZh ? "止盈 1" : "Take Profit 1", exactUnavailable)}${row(isZh ? "止盈 2" : "Take Profit 2", exactUnavailable)}${row(isZh ? "止盈 3" : "Take Profit 3", exactUnavailable)}${row(isZh ? "风险回报" : "Risk Reward", exactUnavailable)}${row(isZh ? "失效水平" : "Invalidation Level", exactUnavailable)}</article>
+        <article class="s5-module s5-bull-module"><h2>11. ${isZh ? "看涨情景" : "Bullish Scenario"}</h2>${row(isZh ? "条件" : "Condition", insufficient)}${row(isZh ? "确认" : "Confirmation", result.confirmation)}${row(isZh ? "目标区域" : "Target Area", exactUnavailable)}${row(isZh ? "失效" : "Invalidation", exactUnavailable)}${row(isZh ? "概率" : "Probability", insufficient)}</article>
+        <article class="s5-module s5-bear-module"><h2>12. ${isZh ? "看跌情景" : "Bearish Scenario"}</h2>${row(isZh ? "条件" : "Condition", insufficient)}${row(isZh ? "确认" : "Confirmation", result.confirmation)}${row(isZh ? "目标区域" : "Target Area", exactUnavailable)}${row(isZh ? "失效" : "Invalidation", exactUnavailable)}${row(isZh ? "概率" : "Probability", insufficient)}</article>
+        <article class="s5-module s5-risk-module"><h2>13. ${isZh ? "风险背景" : "Risk Context"}</h2>${row(isZh ? "图表质量风险" : "Chart Quality Risk", result.chartQuality === "Clear" || result.chartQuality === "清晰" ? isZh ? "低" : "Low" : isZh ? "中等" : "Moderate")}${row(isZh ? "结构风险" : "Structure Risk", insufficient)}${row(isZh ? "流动性风险" : "Liquidity Risk", insufficient)}${row(isZh ? "进场时机风险" : "Entry Timing Risk", insufficient)}${row(isZh ? "新闻背景" : "News Context Status", isZh ? "需要外部验证" : "External Verification Required")}${row(isZh ? "整体风险" : "Overall Risk", insufficient)}<p class="s5-warning">${isZh ? "图表分析不能取代当前市场、新闻和风险验证。" : "Chart analysis does not replace current market, news and risk verification."}</p></article>
+        <article class="s5-module s5-conclusion-module"><h2>14. ${isZh ? "JARVIS 结论" : "JARVIS Conclusion"}</h2><p class="s5-conclusion">${isZh ? "背景不足 • 需要视觉验证 • 等待" : "Insufficient Context • Visual Verification Required • Wait"}</p>${row(isZh ? "主要因素" : "Main Factor", isZh ? "视觉引擎未连接" : "Chart vision not connected")}${row(isZh ? "主要风险" : "Main Risk", isZh ? "无法验证可见结构" : "Visible structure cannot be verified")}${row(isZh ? "决定状态" : "Decision Status", insufficient)}</article>
+        <article class="s5-module s5-next-module"><h2>15. ${isZh ? "下一项确认" : "Next Confirmation"}</h2><p>${result.nextConfirmation}</p></article>
+        <article class="s5-module s5-ask-module"><h2>16. ${isZh ? "询问 JARVIS" : "Ask JARVIS Follow-up"}</h2><p>${isZh ? "带着图表和确认背景继续对话。" : "Continue with the chart and confirmation context."}</p><button id="askJarvisAboutChart" type="button">${lineIcon("message")}${isZh ? "询问 JARVIS 此图表" : "Ask JARVIS about this chart"}</button></article>
+        <article class="s5-module s5-open-analysis-module"><h2>17. ${isZh ? "在 AI 分析中打开" : "Open in AI Analysis"}</h2><p>${isZh ? "将用户提供图表背景带入结构化分析页。" : "Carry the user-provided chart context into structured analysis."}</p><button id="openChartInAiAnalysis" type="button">${lineIcon("analysis")}${isZh ? "在 AI 分析中打开" : "Open in AI Analysis"}</button></article>` : ""}
+      </section>` : ""}
+      ${chart.expanded && hasChart ? `<div class="s5-preview-modal" role="dialog" aria-modal="true" aria-label="${isZh ? "放大图表预览" : "Expanded chart preview"}"><button id="closeChartPreview" type="button" aria-label="${isZh ? "关闭预览" : "Close preview"}">${lineIcon("close")}</button><img src="${chart.previewUrl}" alt="${isZh ? "放大后的交易图表" : "Expanded trading chart"}" /></div>` : ""}
     </section>
 	  `;
 	}
