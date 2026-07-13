@@ -1548,6 +1548,113 @@
 			assets: ["USDJPY", "DXY", "XAUUSD"]
 		}
 	];
+	const sprint7NewsStories = [
+		{
+			id: "demo-policy-guidance",
+			headline: "Demo Scenario: Central-Bank Guidance Shifts Rate Expectations",
+			source: "Demo Dataset",
+			published: "Published time unavailable",
+			category: "Central Banks",
+			impact: "High",
+			verification: "Demo",
+			period: "Latest",
+			topRank: 1,
+			breaking: false,
+			summary: "A demonstration scenario showing how a change in policy guidance could alter rate expectations.",
+			entities: ["Central bank", "Policy guidance"],
+			assets: ["DXY", "XAUUSD", "EURUSD", "US100"],
+			aiSummary: ["A policy-guidance change is being modelled.", "Rate expectations are the main transmission channel.", "No real statement or market reaction is connected."],
+			why: "Policy guidance can influence yields, currency flows and risk positioning.",
+			implication: "USD, gold and rate-sensitive equities may become more volatile if a verified change occurs.",
+			uncertainty: "No official statement, publication time or verified market response is connected.",
+			channel: "Interest-rate expectations",
+			relatedIds: ["demo-growth-outlook"]
+		},
+		{
+			id: "demo-geopolitical-risk",
+			headline: "Demo Scenario: Geopolitical Risk Raises Defensive-Market Sensitivity",
+			source: "Demo Dataset",
+			published: "Published time unavailable",
+			category: "Geopolitics",
+			impact: "High",
+			verification: "Demo",
+			period: "Latest",
+			topRank: 2,
+			breaking: false,
+			summary: "A demonstration scenario for reviewing safe-haven and energy sensitivity during geopolitical uncertainty.",
+			entities: ["Geopolitical risk", "Safe-haven flows"],
+			assets: ["XAUUSD", "DXY", "WTI", "US500"],
+			aiSummary: ["A geopolitical-risk scenario is being modelled.", "Safe-haven and energy channels may become relevant.", "No real event, escalation or market move is claimed."],
+			why: "Geopolitical uncertainty can affect defensive positioning, energy risk and liquidity.",
+			implication: "Gold and oil may become more sensitive, while broader risk appetite may weaken if verified developments escalate.",
+			uncertainty: "There is no connected source or verified developing event.",
+			channel: "Geopolitical risk",
+			relatedIds: ["demo-energy-supply"]
+		},
+		{
+			id: "demo-crypto-regulation",
+			headline: "Demo Scenario: Regulatory Update Changes Crypto Risk Perception",
+			source: "Demo Dataset",
+			published: "Published time unavailable",
+			category: "Crypto",
+			impact: "Medium",
+			verification: "Demo",
+			period: "Latest",
+			topRank: 3,
+			breaking: false,
+			summary: "A sample workflow for interpreting how a regulatory development could affect crypto sentiment.",
+			entities: ["Digital assets", "Regulation"],
+			assets: ["BTCUSD", "ETHUSD"],
+			aiSummary: ["A regulatory-change scenario is being modelled.", "Risk perception is the primary channel.", "No regulator, rule or market reaction is asserted."],
+			why: "Regulatory clarity or uncertainty can influence participation and risk appetite.",
+			implication: "Crypto sensitivity may rise, but direction requires verified details and price confirmation.",
+			uncertainty: "The policy scope and market response are unavailable.",
+			channel: "Regulation",
+			relatedIds: []
+		},
+		{
+			id: "demo-energy-supply",
+			headline: "Demo Scenario: Energy Supply Concern Increases Oil Sensitivity",
+			source: "Demo Dataset",
+			published: "Published time unavailable",
+			category: "Energy",
+			impact: "Medium",
+			verification: "Demo",
+			period: "Latest",
+			topRank: 0,
+			breaking: false,
+			summary: "A demonstration record for explaining the potential transmission from supply risk to energy markets.",
+			entities: ["Energy supply", "Oil market"],
+			assets: ["WTI", "BRENT"],
+			aiSummary: ["A supply-risk scenario is being modelled.", "Energy prices are the main channel.", "No current disruption or price move is claimed."],
+			why: "Supply uncertainty can affect energy-price expectations and inflation sensitivity.",
+			implication: "Oil may become more sensitive if verified supply conditions change.",
+			uncertainty: "No verified disruption, duration or market response is available.",
+			channel: "Energy prices",
+			relatedIds: ["demo-geopolitical-risk"]
+		},
+		{
+			id: "demo-growth-outlook",
+			headline: "Demo Scenario: Growth Outlook Alters Equity and Currency Caution",
+			source: "Demo Dataset",
+			published: "Published time unavailable",
+			category: "Economy",
+			impact: "Low",
+			verification: "Demo",
+			period: "Latest",
+			topRank: 0,
+			breaking: false,
+			summary: "A sample economic-outlook story used to validate filtering and related-news behaviour.",
+			entities: ["Growth outlook", "Risk assets"],
+			assets: ["US100", "US500", "DXY"],
+			aiSummary: ["A growth-outlook scenario is being modelled.", "Risk sentiment and currency flows may be relevant.", "No economic forecast is presented as real."],
+			why: "Growth expectations can influence earnings assumptions, yields and currency positioning.",
+			implication: "Equity and USD sensitivity may change if verified growth expectations shift.",
+			uncertainty: "No verified forecast, source or market reaction is connected.",
+			channel: "Risk sentiment",
+			relatedIds: ["demo-policy-guidance"]
+		}
+	];
 	const storedJarvisChat = JSON.parse(localStorage.getItem("jarvis-conversation") || "[]").filter((item) => !item.thinking);
 	const storedPotentialTradeState = JSON.parse(localStorage.getItem("jarvis-potential-trades") || "{}");
 	const storedPotentialTradeFeedback = JSON.parse(localStorage.getItem("jarvis-trade-feedback") || "[]");
@@ -1664,6 +1771,17 @@
 			isRefreshing: false,
 			refreshStep: 0,
 			error: localStorage.getItem("jarvis-macro-source-error") === "1",
+			lastSuccessfulUpdate: "No successful verified update",
+			dataStatus: "Not Connected"
+		},
+		newsS7: {
+			category: "All",
+			impact: "All Impact",
+			time: "Latest",
+			selectedStoryId: "demo-policy-guidance",
+			isRefreshing: false,
+			refreshStep: 0,
+			error: localStorage.getItem("jarvis-news-source-error") === "1",
 			lastSuccessfulUpdate: "No successful verified update",
 			dataStatus: "Not Connected"
 		}
@@ -4324,29 +4442,98 @@
 	</section>
   `;
 	}
+	function newsFilteredStories() {
+		const filters = state.newsS7;
+		return sprint7NewsStories.filter((story) => (filters.category === "All" || story.category === filters.category) && (filters.impact === "All Impact" || story.impact === filters.impact) && (filters.time === "Latest" ? story.period === "Latest" : false));
+	}
+	function newsSelectedStory() {
+		const filtered = newsFilteredStories();
+		return filtered.find((story) => story.id === state.newsS7.selectedStoryId) || filtered[0] || null;
+	}
+	function newsBadge(value, kind = "status") {
+		return `<span class="s7-badge ${kind}-${value.toLowerCase().replace(/\s+/g, "-")}">${value}</span>`;
+	}
+	function newsStoryCard(story, variant = "latest") {
+		return `<button type="button" class="s7-story-card s7-${variant}-story ${state.newsS7.selectedStoryId === story.id ? "is-selected" : ""}" data-news-story="${story.id}" aria-pressed="${state.newsS7.selectedStoryId === story.id}">
+			<div class="s7-story-meta"><span>${story.source}</span><span>${story.published}</span></div>
+			<h3>${story.headline}</h3>
+			<div class="s7-story-tags">${newsBadge(story.category, "category")}${newsBadge(`${story.impact} Impact`, "impact")}${newsBadge(story.verification, "verification")}</div>
+			<p>${story.summary}</p>
+			<div class="s7-asset-chips">${story.assets.map((asset) => `<span>${asset}</span>`).join("")}</div>
+		</button>`;
+	}
+	function newsLoadingState() {
+		const steps = ["Loading verified sources...", "Checking breaking developments...", "Grouping related stories...", "Assessing market impact...", "Building news intelligence..."];
+		return `<section class="s7-loading" role="status" aria-live="polite"><div class="s7-pulse"><i></i></div><div><strong>JARVIS is updating market news...</strong>${steps.map((step, index) => `<span class="${index <= state.newsS7.refreshStep ? "active" : ""}">${index < state.newsS7.refreshStep ? "✓" : "•"} ${step}</span>`).join("")}</div></section>`;
+	}
+	function newsErrorState() {
+		return `<section class="s7-error" role="alert"><div><strong>Market news is temporarily unavailable.</strong><p>Connection interrupted. Your filters have been preserved.</p><small>Data source: Not Connected · Last successful update: ${state.newsS7.lastSuccessfulUpdate}</small></div><button type="button" id="retryNewsUpdate">Retry News Update</button></section>`;
+	}
 	function economicCalendarPageContent() {
-		const filter = state.approvedUi.calendarFilter;
-		const events = filter.endsWith("Impact") ? calendarEvents.filter((event) => `${event.impact} Impact` === filter) : calendarEvents;
+		const news = state.newsS7;
+		const timezone = macroActiveTimezone();
+		const stories = newsFilteredStories();
+		const selected = newsSelectedStory();
+		const topStories = stories.filter((story) => story.topRank > 0).sort((a, b) => a.topRank - b.topRank);
+		const latestStories = stories.filter((story) => story.topRank === 0);
+		const breakingStories = stories.filter((story) => story.breaking && story.verification === "Verified");
+		const relatedStories = selected ? selected.relatedIds.map((id) => sprint7NewsStories.find((story) => story.id === id)).filter(Boolean) : [];
 		return `
-    <section class="approved-workspace">
-      <div class="approved-page-head"><div><h1>Economic Calendar</h1><p>MYT aligned market-moving events</p></div></div>
-      <div class="approved-tabs">${[
-			"Today",
-			"Tomorrow",
-			"This Week",
-			"All",
-			"High Impact",
-			"Medium Impact",
-			"Low Impact"
-		].map((item) => `<button class="${item === filter ? "active" : ""}" type="button" data-calendar-filter="${item}">${item}</button>`).join("")}</div>
-      <article class="table-card">
-        <div class="calendar-table">
-          <div class="table-head"><span>Time</span><span>Event</span><span>Impact</span><span>Actual</span><span>Forecast</span><span>Previous</span></div>
-          ${events.map((event) => `<div class="calendar-row"><span>${event.time}</span><strong>${event.event}</strong>${statusBadge(event.impact)}<span>${event.actual}</span><span>${event.forecast}</span><span>${event.previous}</span></div>`).join("")}
-        </div>
-        <p class="disclaimer-text">Event data is placeholder until a verified provider is connected.</p>
-      </article>
-    </section>
+    <section class="approved-workspace s7-news-page">
+	  <header class="s7-page-head">
+		<div><span class="s7-kicker">MARKET NEWS INTELLIGENCE</span><h1>News & Events</h1><p>Real-time market developments interpreted by JARVIS.</p></div>
+		<div class="s7-head-actions"><div><span>${newsBadge("Unavailable", "verification")} News Source Not Connected</span><small>Last updated: No verified update</small></div><button type="button" id="refreshNewsData" ${news.isRefreshing ? "disabled" : ""}>${news.isRefreshing ? "Updating..." : "Refresh News"}</button></div>
+	  </header>
+
+	  <section class="s7-data-status" aria-label="News data status">
+		<div><span>News Source Status</span><strong>Not Connected</strong><small>Live news source not connected</small></div>
+		<div><span>Last Successful Update</span><strong>Unavailable</strong><small>No verified update</small></div>
+		<div><span>Delay Status</span><strong>Unavailable</strong><small>Cannot be calculated</small></div>
+		<div><span>Supported Categories</span><strong>Demo Workflow Only</strong><small>No provider coverage confirmed</small></div>
+		<div><span>Verification Status</span><strong>Unavailable</strong><small>Timezone: ${timezone}</small></div>
+	  </section>
+	  <div class="s7-source-notice"><strong>Live news source not connected.</strong><span>Every sample story is marked Demo and has no real publication time, source claim or market reaction.</span></div>
+
+	  <section class="s7-filter-bar" aria-label="News filters">
+		<div class="s7-category-scroll" role="group" aria-label="Market category">${["All", "Forex", "Gold", "Crypto", "Stocks", "Economy", "Central Banks", "Geopolitics", "Energy", "AI"].map((category) => `<button type="button" class="${news.category === category ? "active" : ""}" data-news-category="${category}" aria-pressed="${news.category === category}">${category}</button>`).join("")}</div>
+		<label><span>Impact</span><select id="newsImpactFilter" aria-label="News impact"><option ${news.impact === "All Impact" ? "selected" : ""}>All Impact</option><option ${news.impact === "High" ? "selected" : ""}>High</option><option ${news.impact === "Medium" ? "selected" : ""}>Medium</option><option ${news.impact === "Low" ? "selected" : ""}>Low</option></select></label>
+		<label><span>Time</span><select id="newsTimeFilter" aria-label="News time"><option ${news.time === "Latest" ? "selected" : ""}>Latest</option><option ${news.time === "Today" ? "selected" : ""}>Today</option><option ${news.time === "This Week" ? "selected" : ""}>This Week</option></select></label>
+		<button type="button" id="resetNewsFilters">Reset Filters</button>
+	  </section>
+	  ${news.isRefreshing ? newsLoadingState() : news.error ? newsErrorState() : ""}
+
+	  ${stories.length ? `<section class="s7-primary-grid"><div class="s7-left-column">
+		<article class="s7-panel s7-top-stories"><div class="s7-section-head"><div><span>TOP STORIES</span><h2>Curated Demo Scenarios</h2></div>${newsBadge("Demo", "verification")}</div>${topStories.length ? `<div class="s7-top-grid">${topStories.map((story) => newsStoryCard(story, "top")).join("")}</div>` : `<div class="s7-inline-empty">No Top Stories match the selected filters.</div>`}<small>Ordering follows a fixed demo rank. It is not an AI or live-news ranking.</small></article>
+
+		<article class="s7-panel s7-breaking"><div class="s7-section-head"><div><span>BREAKING NEWS</span><h2>Verified Developments</h2></div></div>${breakingStories.length ? breakingStories.map((story) => newsStoryCard(story, "breaking")).join("") : `<div class="s7-no-breaking"><strong>No verified breaking news at this time.</strong><p>A story will appear here only when a connected source identifies a genuinely time-sensitive development.</p></div>`}</article>
+
+		<article class="s7-panel s7-latest"><div class="s7-section-head"><div><span>LATEST NEWS</span><h2>More Demo Scenarios</h2></div><span>${latestStories.length} records</span></div>${latestStories.length ? `<div class="s7-latest-list">${latestStories.map((story) => newsStoryCard(story, "latest")).join("")}</div>` : `<div class="s7-inline-empty">No additional news stories match the selected filters.</div>`}</article></div><div class="s7-right-column">
+
+		<article class="s7-panel s7-selected-detail"><div class="s7-section-head"><div><span>SELECTED NEWS DETAIL</span><h2>${selected.headline}</h2></div>${newsBadge(selected.verification, "verification")}</div><div class="s7-detail-meta"><span>Source: ${selected.source}</span><span>${selected.published}</span><span>Timezone: ${timezone}</span>${newsBadge(selected.category, "category")}${newsBadge(`${selected.impact} Impact`, "impact")}</div><h3>Source Facts</h3><p>${selected.summary}</p><div class="s7-entity-row"><span>Relevant entities</span>${selected.entities.map((entity) => `<b>${entity}</b>`).join("")}</div><div class="s7-asset-chips">${selected.assets.map((asset) => `<span>${asset}</span>`).join("")}</div><small>Source link unavailable. No article text or quotation is reproduced.</small></article>
+
+		<article class="s7-panel s7-ai-summary"><div class="s7-section-head"><div><span>AI SUMMARY</span><h2>JARVIS Summary</h2></div>${newsBadge("Demo", "verification")}</div><ul>${selected.aiSummary.map((item) => `<li>${item}</li>`).join("")}</ul><small>This summary describes a demo scenario, not a verified article.</small></article>
+
+		<article class="s7-panel s7-interpretation"><div class="s7-section-head"><div><span>JARVIS INTERPRETATION</span><h2>Why It May Matter</h2></div>${newsBadge("Preliminary", "verification")}</div><div><strong>Why it matters</strong><p>${selected.why}</p></div><div><strong>Potential implication</strong><p>${selected.implication}</p></div><div><strong>Main uncertainty</strong><p>${selected.uncertainty}</p></div><div><strong>Confirmation required</strong><p>Connect a verified source, confirm the story details, then compare with verified price and structure.</p></div></article></div><div class="s7-impact-grid">
+
+		<article class="s7-panel s7-market-impact"><div class="s7-section-head"><div><span>MARKET IMPACT</span><h2>Impact Framework</h2></div>${newsBadge("Insufficient Data", "verification")}</div>${[["Overall Impact", "Insufficient Data"], ["Impact Horizon", "Unclear"], ["Market Sensitivity", "Unavailable"], ["Transmission Channel", selected.channel], ["Confidence", "Low / Demo"]].map(([label, value]) => `<div class="s7-line"><span>${label}</span><strong>${value}</strong></div>`).join("")}<small>No numeric impact score is used because no defined verified scoring model exists.</small></article>
+
+		<article class="s7-panel s7-affected-assets"><div class="s7-section-head"><div><span>AFFECTED ASSETS</span><h2>Context Candidates</h2></div>${newsBadge("Demo", "verification")}</div>${selected.assets.map((asset) => `<div class="s7-asset-row"><strong>${asset}</strong><span>Unavailable sensitivity</span><span>Awaiting Confirmation</span><span>Low confidence</span><span>${selected.channel}</span><span>Source not connected</span></div>`).join("")}<small>These symbols are demo context candidates, not verified affected assets or trading instructions.</small></article></div>
+	  </section>
+
+	  <section class="s7-secondary-grid">
+		<article class="s7-panel s7-sentiment"><div class="s7-section-head"><div><span>MARKET SENTIMENT</span><h2>Sentiment Context</h2></div>${newsBadge("Insufficient Data", "verification")}</div>${[["Risk Sentiment", "Insufficient Data"], ["USD Sentiment", "Insufficient Data"], ["Gold Sentiment", "Insufficient Data"], ["Equity Sentiment", "Insufficient Data"], ["Crypto Sentiment", "Insufficient Data"], ["Energy Sentiment", "Insufficient Data"], ["Overall Market Mood", "Uncertain"]].map(([label, value]) => `<div class="s7-line"><span>${label}</span><strong>${value}</strong></div>`).join("")}</article>
+
+		<article class="s7-panel s7-risk"><div class="s7-section-head"><div><span>RISK CONTEXT</span><h2>News Reliability & Reaction</h2></div>${newsBadge("Insufficient Data", "verification")}</div>${[["News Reliability Risk", "High"], ["Market Reaction Risk", "Insufficient Data"], ["Liquidity Risk", "Unavailable"], ["Headline Reversal Risk", "High"], ["Follow-Up Event Risk", "Unavailable"], ["Overall Risk", "Insufficient Data"]].map(([label, value]) => `<div class="s7-line"><span>${label}</span><strong>${value}</strong></div>`).join("")}<p>Initial headline reactions may reverse as additional details become available. Verify first and keep risk controlled.</p></article>
+
+		<article class="s7-panel s7-timeline"><div class="s7-section-head"><div><span>NEWS TIMELINE</span><h2>Developing Story</h2></div></div><div class="s7-no-timeline"><strong>No verified event timeline available.</strong><p>JARVIS will not create artificial updates without connected, related coverage.</p></div></article>
+
+		<article class="s7-panel s7-related"><div class="s7-section-head"><div><span>RELATED NEWS</span><h2>Demo Relationships</h2></div>${newsBadge("Demo", "verification")}</div>${relatedStories.length ? relatedStories.map((story) => `<button type="button" data-news-story="${story.id}"><strong>${story.headline}</strong><span>${story.source} · ${story.published}</span><small>Demo Relationship</small></button>`).join("") : `<div class="s7-inline-empty">No related news available.</div>`}</article>
+	  </section>
+
+	  <section class="s7-conclusion"><div><span>JARVIS NEWS CONCLUSION</span><h2>${selected.category} Demo Context <b>·</b> ${selected.assets[0] || "Market"} Verification Required <b>·</b> Preliminary</h2></div><div class="s7-conclusion-grid"><span><small>Main Factor</small>${selected.channel}</span><span><small>Most Affected Asset</small>Unverified (${selected.assets[0] || "Unavailable"} demo)</span><span><small>Main Risk</small>Source not connected</span><span><small>Decision Status</small>Preliminary</span></div></section>
+
+	  <section class="s7-handoff-grid"><article><div><span>ASK JARVIS ABOUT THIS NEWS</span><h3>Discuss the selected news context</h3><p>Carry only concise demo metadata, interpretation, assets and risk context.</p></div><button type="button" id="askJarvisAboutNews">Ask JARVIS</button></article><article><div><span>OPEN IN AI ANALYSIS</span><h3>Add news context to analysis</h3><p>Use the story as an additional preliminary input without replacing technical analysis.</p></div><button type="button" id="openNewsInAnalysis">Open in AI Analysis</button></article></section>` : `<section class="s7-empty"><strong>No news matches the selected filters.</strong><p>Live news source not connected.</p><div><button type="button" id="emptyResetNewsFilters">Reset Filters</button><button type="button" id="changeNewsCategory">Change Category</button><button type="button" id="emptyRefreshNews">Refresh News</button></div></section>`}
+	</section>
   `;
 	}
 	function tradePlannerPageContent(brain) {
@@ -4515,6 +4702,7 @@
 			if (contextualInput) contextualInput.value = state.jarvis.question;
 		});
 		bindMacroIntelligenceActions(page);
+		bindNewsEventsActions(page);
 	}
 	function bindMacroIntelligenceActions(page) {
 		const controls = [
@@ -4616,6 +4804,110 @@
 		}
 		state.macroS6.isRefreshing = false;
 		state.macroS6.dataStatus = "Not Connected";
+		await render();
+	}
+	function bindNewsEventsActions(page) {
+		page.querySelectorAll("[data-news-category]").forEach((button) => {
+			button.addEventListener("click", () => {
+				state.newsS7.category = button.dataset.newsCategory;
+				state.newsS7.selectedStoryId = newsFilteredStories()[0]?.id || "";
+				render();
+			});
+		});
+		page.querySelector("#newsImpactFilter")?.addEventListener("change", (event) => {
+			state.newsS7.impact = event.currentTarget.value;
+			state.newsS7.selectedStoryId = newsFilteredStories()[0]?.id || "";
+			render();
+		});
+		page.querySelector("#newsTimeFilter")?.addEventListener("change", (event) => {
+			state.newsS7.time = event.currentTarget.value;
+			state.newsS7.selectedStoryId = newsFilteredStories()[0]?.id || "";
+			render();
+		});
+		const resetFilters = () => {
+			state.newsS7.category = "All";
+			state.newsS7.impact = "All Impact";
+			state.newsS7.time = "Latest";
+			state.newsS7.selectedStoryId = "demo-policy-guidance";
+			render();
+		};
+		page.querySelector("#resetNewsFilters")?.addEventListener("click", resetFilters);
+		page.querySelector("#emptyResetNewsFilters")?.addEventListener("click", resetFilters);
+		page.querySelector("#changeNewsCategory")?.addEventListener("click", () => {
+			state.newsS7.category = "All";
+			state.newsS7.time = "Latest";
+			state.newsS7.selectedStoryId = sprint7NewsStories[0].id;
+			render();
+		});
+		page.querySelectorAll("[data-news-story]").forEach((button) => {
+			button.addEventListener("click", () => {
+				state.newsS7.selectedStoryId = button.dataset.newsStory;
+				render();
+			});
+		});
+		page.querySelector("#refreshNewsData")?.addEventListener("click", runNewsRefresh);
+		page.querySelector("#emptyRefreshNews")?.addEventListener("click", runNewsRefresh);
+		page.querySelector("#retryNewsUpdate")?.addEventListener("click", () => {
+			localStorage.removeItem("jarvis-news-source-error");
+			state.newsS7.error = false;
+			runNewsRefresh();
+		});
+		page.querySelector("#askJarvisAboutNews")?.addEventListener("click", async () => {
+			const story = newsSelectedStory();
+			if (!story) return;
+			state.jarvis.conversationState.newsContext = {
+				headline: story.headline,
+				source: story.source,
+				published: story.published,
+				category: story.category,
+				verification: story.verification,
+				summary: story.summary,
+				interpretation: { why: story.why, implication: story.implication, uncertainty: story.uncertainty },
+				affectedAssets: story.assets,
+				marketSentiment: "Insufficient Data",
+				risk: "Insufficient Data",
+				decisionStatus: "Preliminary"
+			};
+			state.jarvis.conversationState.currentAsset = story.assets[0] || "";
+			state.jarvis.conversationState.missingInformation = ["Connected news source", "Verified publication time", "Verified market reaction"];
+			state.jarvis.topic = story.assets[0] || story.category;
+			state.jarvis.question = `Explain this demo news context: ${story.headline}. Keep it preliminary and tell me what must be verified.`;
+			state.activePage = "JARVIS";
+			await renderFromTop();
+			const input = document.querySelector(".ask-page #jarvisQuestion");
+			if (input) input.value = state.jarvis.question;
+		});
+		page.querySelector("#openNewsInAnalysis")?.addEventListener("click", () => {
+			const story = newsSelectedStory();
+			if (!story) return;
+			state.approvedUi.analysisAsset = story.assets.find((asset) => ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "BTCUSD"].includes(asset)) || "XAUUSD";
+			state.approvedUi.newsContext = {
+				headline: story.headline,
+				category: story.category,
+				impact: story.impact,
+				directionalPressure: "Awaiting Confirmation",
+				interpretation: story.implication,
+				sentiment: "Insufficient Data",
+				risk: "Insufficient Data",
+				source: story.verification === "Verified" ? "Verified News" : story.verification === "Preliminary" ? "Preliminary News" : "Unverified News"
+			};
+			state.activePage = "AIAnalysis";
+			renderFromTop();
+		});
+	}
+	async function runNewsRefresh() {
+		if (state.newsS7.isRefreshing) return;
+		state.newsS7.isRefreshing = true;
+		state.newsS7.refreshStep = 0;
+		state.newsS7.error = false;
+		await render();
+		for (let index = 0; index < 5; index += 1) {
+			await new Promise((resolve) => setTimeout(resolve, 180));
+			state.newsS7.refreshStep = index;
+			await render();
+		}
+		state.newsS7.isRefreshing = false;
+		state.newsS7.dataStatus = "Not Connected";
 		await render();
 	}
 	async function runAiAnalysisRefresh() {

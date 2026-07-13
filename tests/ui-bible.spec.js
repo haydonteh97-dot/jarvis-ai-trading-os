@@ -428,3 +428,127 @@ test.describe('Sprint 6 Macro Intelligence', () => {
     });
   }
 });
+
+async function openNewsEvents(page, mobile = false) {
+  if (mobile) await page.getByRole('button', { name: 'Open navigation' }).click();
+  await page.getByRole('button', { name: 'News & Events' }).click();
+  await expect(page.locator('.s7-news-page')).toBeVisible();
+}
+
+test.describe('Sprint 7 News & Events Intelligence', () => {
+  test('desktop intelligence hierarchy is complete and data honesty is explicit', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await login(page);
+    await openNewsEvents(page);
+
+    await expect(page.getByText('Live news source not connected.', { exact: true })).toBeVisible();
+    await expect(page.locator('.s7-head-actions')).toContainText('News Source Not Connected');
+    await expect(page.locator('.s7-top-story')).toHaveCount(3);
+    await expect(page.locator('.s7-breaking')).toContainText('No verified breaking news at this time.');
+    await expect(page.locator('.s7-latest-story')).toHaveCount(2);
+    await expect(page.locator('.verification-demo').first()).toBeVisible();
+    expect(await page.locator('.s7-story-card').evaluateAll((cards) => cards.every((card) => card.textContent.includes('Demo')))).toBe(true);
+    await expect(page.getByText('Published time unavailable', { exact: true }).first()).toBeVisible();
+    await expect(page.locator('.s7-timeline')).toContainText('No verified event timeline available.');
+    await page.screenshot({ path: 'artifacts/news-desktop.png', fullPage: true });
+    await page.locator('.s7-top-stories').screenshot({ path: 'artifacts/news-top-stories.png' });
+    await page.locator('.s7-breaking').screenshot({ path: 'artifacts/news-breaking-state.png' });
+    await page.locator('.s7-selected-detail').screenshot({ path: 'artifacts/news-selected-detail.png' });
+    await page.locator('.s7-ai-summary').screenshot({ path: 'artifacts/news-ai-summary.png' });
+    await page.locator('.s7-interpretation').screenshot({ path: 'artifacts/news-interpretation.png' });
+    await page.locator('.s7-market-impact').screenshot({ path: 'artifacts/news-market-impact.png' });
+    await page.locator('.s7-affected-assets').screenshot({ path: 'artifacts/news-affected-assets.png' });
+    await page.locator('.s7-sentiment').screenshot({ path: 'artifacts/news-market-sentiment.png' });
+    await page.locator('.s7-risk').screenshot({ path: 'artifacts/news-risk-context.png' });
+    await page.locator('.s7-timeline').screenshot({ path: 'artifacts/news-timeline.png' });
+    await page.locator('.s7-source-notice').screenshot({ path: 'artifacts/news-disconnected-source.png' });
+  });
+
+  test('category, impact, time and reset filters work without duplicate stories', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await login(page);
+    await openNewsEvents(page);
+
+    await page.locator('[data-news-category="Crypto"]').click();
+    await expect(page.locator('.s7-story-card')).toHaveCount(1);
+    await expect(page.getByText('Demo Scenario: Regulatory Update Changes Crypto Risk Perception', { exact: true }).first()).toBeVisible();
+    await page.locator('#newsImpactFilter').selectOption('High');
+    await expect(page.getByText('No news matches the selected filters.', { exact: true })).toBeVisible();
+    await expect(page.locator('.s7-empty')).toContainText('Live news source not connected.');
+
+    await page.locator('#emptyResetNewsFilters').click();
+    await page.locator('#newsTimeFilter').selectOption('Today');
+    await expect(page.getByText('No news matches the selected filters.', { exact: true })).toBeVisible();
+    await page.screenshot({ path: 'artifacts/news-empty-filter-state.png', fullPage: false });
+    await page.locator('#emptyResetNewsFilters').click();
+    const ids = await page.locator('.s7-story-card').evaluateAll((cards) => cards.map((card) => card.dataset.newsStory));
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  test('story selection, related news and both contextual handoffs work', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await login(page);
+    await openNewsEvents(page);
+    await page.locator('[data-news-story="demo-energy-supply"]').first().click();
+    await expect(page.locator('.s7-selected-detail')).toContainText('Demo Scenario: Energy Supply Concern Increases Oil Sensitivity');
+    await expect(page.locator('.s7-related')).toContainText('Demo Scenario: Geopolitical Risk Raises Defensive-Market Sensitivity');
+
+    await page.locator('#askJarvisAboutNews').click();
+    await expect(page.locator('.ask-page')).toBeVisible();
+    await expect(page.locator('#jarvisQuestion')).toHaveValue(/Demo Scenario: Energy Supply Concern/);
+
+    await page.getByRole('button', { name: 'News & Events' }).click();
+    await page.locator('[data-news-story="demo-policy-guidance"]').first().click();
+    await page.locator('#openNewsInAnalysis').click();
+    await expect(page.locator('.ai-analysis-page')).toBeVisible();
+    await expect(page.locator('#analysisAssetSelect')).toHaveValue('XAUUSD');
+  });
+
+  test('refresh prevents duplicate actions and preserves filters', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await login(page);
+    await openNewsEvents(page);
+    await page.locator('[data-news-category="Gold"]').click();
+    const refresh = page.locator('#refreshNewsData');
+    await refresh.click();
+    await expect(page.getByText('JARVIS is updating market news...', { exact: true })).toBeVisible();
+    await expect(refresh).toBeDisabled();
+    await page.screenshot({ path: 'artifacts/news-loading-state.png', fullPage: false });
+    await expect(page.getByText('JARVIS is updating market news...', { exact: true })).toBeHidden({ timeout: 4000 });
+    await expect(page.locator('[data-news-category="Gold"]')).toHaveClass(/active/);
+  });
+
+  test('source error and retry preserve selected filters', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('jarvis-news-source-error', '1'));
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await login(page);
+    await openNewsEvents(page);
+    await page.locator('#newsImpactFilter').selectOption('Medium');
+    await expect(page.getByText('Market news is temporarily unavailable.', { exact: true })).toBeVisible();
+    await page.screenshot({ path: 'artifacts/news-error-state.png', fullPage: false });
+    await page.locator('#retryNewsUpdate').click();
+    await expect(page.getByText('JARVIS is updating market news...', { exact: true })).toBeVisible();
+    await expect(page.getByText('JARVIS is updating market news...', { exact: true })).toBeHidden({ timeout: 4000 });
+    await expect(page.locator('#newsImpactFilter')).toHaveValue('Medium');
+    await expect(page.getByText('Market news is temporarily unavailable.', { exact: true })).toHaveCount(0);
+  });
+
+  for (const viewport of [{ width: 390, height: 844 }, { width: 430, height: 932 }]) {
+    test(`mobile news stays in viewport at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await login(page);
+      await openNewsEvents(page, true);
+      await expect(page.locator('.s7-story-card')).toHaveCount(5);
+      const mobile = await page.evaluate(() => ({
+        width: document.documentElement.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        maxCardWidth: Math.max(...[...document.querySelectorAll('.s7-panel, .s7-story-card')].map((element) => element.getBoundingClientRect().width)),
+        timezone: document.querySelector('.s7-data-status')?.textContent.includes('Timezone:'),
+      }));
+      expect(mobile.scrollWidth).toBeLessThanOrEqual(mobile.width);
+      expect(mobile.maxCardWidth).toBeLessThanOrEqual(mobile.width);
+      expect(mobile.timezone).toBe(true);
+      if (viewport.width === 390) await page.screenshot({ path: 'artifacts/news-mobile.png', fullPage: true });
+    });
+  }
+});
