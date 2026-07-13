@@ -1462,6 +1462,92 @@
 			risk: "High"
 		}
 	];
+	const sprint6MacroEvents = [
+		{
+			id: "demo-us-inflation-released",
+			dateRange: "Today",
+			time: "Timing unavailable",
+			currency: "USD",
+			region: "United States",
+			impact: "High",
+			category: "Inflation",
+			name: "Sample Core Inflation Release",
+			previous: "3.3% (Demo)",
+			forecast: "3.2% (Demo)",
+			actual: "3.1% (Demo)",
+			revision: "Unavailable",
+			status: "Released",
+			quality: "Demo",
+			explanation: "A sample inflation event used only to demonstrate the Macro Intelligence workflow.",
+			whyMonitored: "Inflation can influence rate expectations, USD sensitivity and volatility across gold and risk assets.",
+			surprise: "Weaker Than Expected",
+			interpretation: "In this demo scenario, inflation is below the sample forecast. A real conclusion still requires verified data, positioning and market reaction.",
+			assets: ["XAUUSD", "DXY", "EURUSD", "BTCUSD"]
+		},
+		{
+			id: "demo-us-employment-upcoming",
+			dateRange: "Today",
+			time: "Timing unavailable",
+			currency: "USD",
+			region: "United States",
+			impact: "High",
+			category: "Employment",
+			name: "Sample Employment Report",
+			previous: "Unavailable",
+			forecast: "Unavailable",
+			actual: "Awaiting Release",
+			revision: "Unavailable",
+			status: "Upcoming",
+			quality: "Demo",
+			explanation: "A sample upcoming labour-market event. No real release time or values are shown.",
+			whyMonitored: "Employment data can change growth and policy expectations, but the reaction depends on the complete release and current positioning.",
+			surprise: "Data Unavailable",
+			interpretation: "Await the verified release. No actual-versus-forecast interpretation is available.",
+			assets: ["DXY", "XAUUSD", "USDJPY", "US100"]
+		},
+		{
+			id: "demo-eu-growth-upcoming",
+			dateRange: "Tomorrow",
+			time: "Timing unavailable",
+			currency: "EUR",
+			region: "Euro Area",
+			impact: "Medium",
+			category: "Growth",
+			name: "Sample Growth Survey",
+			previous: "Unavailable",
+			forecast: "Unavailable",
+			actual: "Awaiting Release",
+			revision: "Unavailable",
+			status: "Upcoming",
+			quality: "Demo",
+			explanation: "A sample growth event for validating filters and responsive presentation.",
+			whyMonitored: "Growth surveys may affect currency expectations when the result is verified and materially different from consensus.",
+			surprise: "Data Unavailable",
+			interpretation: "Verified values are required before interpreting the event.",
+			assets: ["EURUSD", "DXY"]
+		},
+		{
+			id: "demo-jp-central-bank",
+			dateRange: "This Week",
+			time: "Timing unavailable",
+			currency: "JPY",
+			region: "Japan",
+			impact: "High",
+			category: "Central Bank",
+			name: "Sample Central-Bank Decision",
+			previous: "Unavailable",
+			forecast: "Unavailable",
+			actual: "Awaiting Release",
+			revision: "Unavailable",
+			status: "Upcoming",
+			quality: "Demo",
+			explanation: "A demonstration record only. No meeting date, statement or decision is implied.",
+			whyMonitored: "Verified policy communication can affect rates and currency volatility.",
+			surprise: "Not Applicable",
+			interpretation: "Verified central-bank information is not connected.",
+			assets: ["USDJPY", "DXY", "XAUUSD"]
+		}
+	];
 	const storedJarvisChat = JSON.parse(localStorage.getItem("jarvis-conversation") || "[]").filter((item) => !item.thinking);
 	const storedPotentialTradeState = JSON.parse(localStorage.getItem("jarvis-potential-trades") || "{}");
 	const storedPotentialTradeFeedback = JSON.parse(localStorage.getItem("jarvis-trade-feedback") || "[]");
@@ -1568,6 +1654,18 @@
 			macroTab: "Top News",
 			calendarFilter: "Today",
 			settingsTab: "Profile"
+		},
+		macroS6: {
+			dateRange: "Today",
+			impact: "All",
+			currency: "All",
+			category: "All",
+			selectedEventId: "demo-us-inflation-released",
+			isRefreshing: false,
+			refreshStep: 0,
+			error: localStorage.getItem("jarvis-macro-source-error") === "1",
+			lastSuccessfulUpdate: "No successful verified update",
+			dataStatus: "Not Connected"
 		}
 	};
 	const logoSrc = "data:image/webp;base64,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";
@@ -4094,34 +4192,136 @@
     </section>
   `;
 	}
+	function macroActiveTimezone() {
+		try {
+			return Intl.DateTimeFormat().resolvedOptions().timeZone || "Timezone not confirmed";
+		} catch {
+			return "Timezone not confirmed";
+		}
+	}
+	function macroCurrentDate() {
+		try {
+			return new Intl.DateTimeFormat(state.jarvis.language === "zh" ? "zh-CN" : "en-GB", {
+				weekday: "short",
+				day: "2-digit",
+				month: "short",
+				year: "numeric"
+			}).format(/* @__PURE__ */ new Date());
+		} catch {
+			return "Date unavailable";
+		}
+	}
+	function macroFilteredEvents() {
+		const filters = state.macroS6;
+		return sprint6MacroEvents.filter((event) => {
+			const dateMatch = filters.dateRange === "Custom Range" ? false : filters.dateRange === "Next Week" ? false : event.dateRange === filters.dateRange || filters.dateRange === "This Week" && ["Today", "Tomorrow", "This Week"].includes(event.dateRange);
+			return dateMatch && (filters.impact === "All" || event.impact === filters.impact) && (filters.currency === "All" || event.currency === filters.currency) && (filters.category === "All" || event.category === filters.category);
+		});
+	}
+	function macroSelectedEvent() {
+		const filtered = macroFilteredEvents();
+		return filtered.find((event) => event.id === state.macroS6.selectedEventId) || filtered[0] || null;
+	}
+	function macroSelectControl(id, label, values, selected) {
+		return `<label class="s6-filter"><span>${label}</span><select id="${id}" aria-label="${label}">${values.map((value) => `<option value="${value}" ${value === selected ? "selected" : ""}>${value}</option>`).join("")}</select></label>`;
+	}
+	function macroQualityTag(value = "Unavailable") {
+		return `<span class="s6-quality quality-${value.toLowerCase().replace(/\s+/g, "-")}">${value}</span>`;
+	}
+	function macroImpactTag(value) {
+		return `<span class="s6-impact impact-${value.toLowerCase()}"><i></i>${value} Impact</span>`;
+	}
+	function macroEventCard(event, selected) {
+		return `<button type="button" class="s6-event-card ${selected ? "is-selected" : ""}" data-macro-event="${event.id}" aria-pressed="${selected}">
+			<span class="s6-event-time">${event.time}<small>${event.currency} · ${event.region}</small></span>
+			<span class="s6-event-name"><strong>${event.name}</strong><small>${event.category}</small></span>
+			${macroImpactTag(event.impact)}
+			<span class="s6-event-value"><small>Previous</small>${event.previous}</span>
+			<span class="s6-event-value"><small>Forecast</small>${event.forecast}</span>
+			<span class="s6-event-value"><small>Actual</small>${event.actual}</span>
+			<span class="s6-release release-${event.status.toLowerCase()}">${event.status}</span>
+			${macroQualityTag(event.quality)}
+		</button>`;
+	}
+	function macroLoadingState() {
+		const steps = [
+			"Loading economic calendar...",
+			"Checking event status...",
+			"Updating released values...",
+			"Interpreting market impact...",
+			"Building macro summary..."
+		];
+		return `<section class="s6-loading" role="status" aria-live="polite"><div class="s6-orbit"><i></i></div><div><strong>JARVIS is updating macro intelligence...</strong>${steps.map((step, index) => `<span class="${index <= state.macroS6.refreshStep ? "active" : ""}">${index < state.macroS6.refreshStep ? "✓" : "•"} ${step}</span>`).join("")}</div></section>`;
+	}
+	function macroErrorState() {
+		return `<section class="s6-error" role="alert"><div><strong>Macro data is temporarily unavailable.</strong><p>Connection interrupted. Your filters have been preserved.</p><small>Data status: Not Connected · Last successful update: ${state.macroS6.lastSuccessfulUpdate}</small></div><button type="button" id="retryMacroData">Retry</button></section>`;
+	}
 	function macroIntelligencePageContent() {
-		const activeTab = state.approvedUi.macroTab;
+		const macro = state.macroS6;
+		const timezone = macroActiveTimezone();
+		const events = macroFilteredEvents();
+		const selected = macroSelectedEvent();
+		const highImpactCount = events.filter((event) => event.impact === "High").length;
+		const affectedAssets = selected?.assets || [];
 		return `
-    <section class="approved-workspace">
-      <div class="approved-page-head"><div><h1>Macro Intelligence</h1><p>AI powered macro analysis</p></div></div>
-      <div class="approved-tabs">${[
-			"Top News",
-			"AI Summary",
-			"Global Events",
-			"Central Banks"
-		].map((item) => `<button class="${item === activeTab ? "active" : ""}" type="button" data-macro-tab="${item}">${item}</button>`).join("")}</div>
-      <section class="macro-layout">
-        <article class="table-card">
-          <h3>Important News Feed</h3>
-          ${alphaMacroEvents.map((event) => newsRow(event)).join("")}
-        </article>
-        <aside class="macro-summary-panel">
-          <h3>AI Macro Summary</h3>
-          <p>Markets are waiting for fresh USD catalyst. Gold remains sensitive to DXY and inflation expectations, while crypto requires confirmation before risk-on positioning.</p>
-          ${[
-			"Gold: Bullish",
-			"DXY: Neutral",
-			"Crypto: Neutral",
-			"Stocks: Watch volatility"
-		].map((item) => `<div class="metric-line"><span>${item.split(":")[0]}</span><b>${item.split(":")[1]}</b></div>`).join("")}
-        </aside>
-      </section>
-    </section>
+    <section class="approved-workspace s6-macro-page">
+      <header class="s6-page-head">
+		<div><span class="s6-kicker">MACRO DECISION SUPPORT</span><h1>Macro Intelligence</h1><p>Economic events and market impact interpreted by JARVIS.</p></div>
+		<div class="s6-head-actions"><div><small>${macroCurrentDate()}</small><span>${macroQualityTag("Unavailable")} Data Source Not Connected</span><small>Last updated: No verified update</small></div><button type="button" id="refreshMacroData" ${macro.isRefreshing ? "disabled" : ""}>${macro.isRefreshing ? "Updating..." : "Refresh Macro Data"}</button></div>
+	  </header>
+
+	  <section class="s6-data-status" aria-label="Macro data status">
+		<div><span>Economic Calendar</span><strong>Not Connected</strong><small>Verified provider required</small></div>
+		<div><span>Macro Data</span><strong>Not Connected</strong><small>No live releases</small></div>
+		<div><span>Last Successful Update</span><strong>Unavailable</strong><small>No verified update</small></div>
+		<div><span>Data Delay</span><strong>Unavailable</strong><small>Cannot be calculated</small></div>
+		<div><span>Supported Currencies</span><strong>USD · EUR · GBP · JPY</strong><small>AUD · CAD · CHF · CNY</small></div>
+	  </section>
+	  <div class="s6-source-notice"><strong>Verified macro source not connected.</strong><span>The sample records below are clearly labelled Demo Data and are not real upcoming events.</span></div>
+
+	  <section class="s6-filter-bar" aria-label="Macro filters">
+		${macroSelectControl("macroDateRange", "Date Range", ["Today", "Tomorrow", "This Week", "Next Week", "Custom Range"], macro.dateRange)}
+		${macroSelectControl("macroImpact", "Impact", ["All", "High", "Medium", "Low"], macro.impact)}
+		${macroSelectControl("macroCurrency", "Currency", ["All", "USD", "EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "CNY"], macro.currency)}
+		${macroSelectControl("macroCategory", "Category", ["All", "Inflation", "Employment", "Growth", "Central Bank", "Consumer", "Manufacturing", "Housing", "Energy", "Other"], macro.category)}
+		<div class="s6-filter-actions"><button type="button" id="resetMacroFilters">Reset Filters</button><button type="button" id="refreshMacroFilters" ${macro.isRefreshing ? "disabled" : ""}>Refresh Data</button></div>
+	  </section>
+	  ${macro.dateRange === "Custom Range" ? `<p class="s6-custom-note">Custom Range requires verified event dates. No demo date is assumed.</p>` : ""}
+	  ${macro.isRefreshing ? macroLoadingState() : macro.error ? macroErrorState() : ""}
+
+	  <section class="s6-risk-summary">
+		<div><span>High-Impact Events</span><strong>${events.length ? highImpactCount : "Unavailable"}</strong><small>${events.length ? "Demo records only" : "No matching records"}</small></div>
+		<div><span>Highest-Risk Currency</span><strong>${events.find((event) => event.impact === "High")?.currency || "Unavailable"}</strong><small>Demo context</small></div>
+		<div><span>Next Major Event</span><strong>${events.find((event) => event.status === "Upcoming")?.name || "Unavailable"}</strong><small>Event timing unavailable</small></div>
+		<div><span>Risk Window</span><strong>Data Unavailable</strong><small>Timezone: ${timezone}</small></div>
+		<div><span>Suggested Caution</span><strong>Monitor Only</strong><small>Verify before acting</small></div>
+	  </section>
+
+	  <section class="s6-calendar-module">
+		<div class="s6-section-head"><div><span>ECONOMIC CALENDAR</span><h2>Event Calendar</h2></div><div>${macroQualityTag("Demo")}<span>${events.length} matching record${events.length === 1 ? "" : "s"}</span></div></div>
+		${events.length ? `<div class="s6-calendar-head"><span>Time / Currency</span><span>Event</span><span>Impact</span><span>Previous</span><span>Forecast</span><span>Actual</span><span>Status</span><span>Quality</span></div><div class="s6-event-list">${events.map((event) => macroEventCard(event, selected?.id === event.id)).join("")}</div>` : `<div class="s6-empty"><strong>No macro events match the selected filters.</strong><p>${macro.dataStatus === "Not Connected" ? "Verified macro source not connected." : "Change the current filter combination."}</p><div><button type="button" id="emptyResetMacroFilters">Reset Filters</button><button type="button" id="changeMacroDateRange">Change Date Range</button></div></div>`}
+	  </section>
+
+	  ${selected ? `<section class="s6-detail-grid">
+		<article class="s6-module s6-event-detail"><div class="s6-module-head"><div><span>SELECTED EVENT DETAIL</span><h2>${selected.name}</h2></div>${macroImpactTag(selected.impact)}</div><div class="s6-detail-meta"><span>${selected.currency}</span><span>${selected.region}</span><span>${selected.time}</span><span>Timezone: ${timezone}</span>${macroQualityTag(selected.quality)}</div><div class="s6-values"><div><small>Previous</small><strong>${selected.previous}</strong></div><div><small>Forecast</small><strong>${selected.forecast}</strong></div><div><small>Actual</small><strong>${selected.actual}</strong></div><div><small>Revision</small><strong>${selected.revision}</strong></div></div><p>${selected.explanation}</p><div class="s6-explain"><strong>Why traders monitor this event</strong><p>${selected.whyMonitored}</p></div></article>
+
+		<article class="s6-module s6-interpretation"><div class="s6-module-head"><div><span>ACTUAL VS FORECAST</span><h2>Preliminary Interpretation</h2></div><span class="s6-surprise">${selected.surprise}</span></div><div class="s6-values"><div><small>Actual</small><strong>${selected.actual}</strong></div><div><small>Forecast</small><strong>${selected.forecast}</strong></div><div><small>Previous</small><strong>${selected.previous}</strong></div><div><small>Difference</small><strong>${selected.status === "Released" ? "-0.1 pp (Demo)" : "Data Unavailable"}</strong></div></div><p>${selected.interpretation}</p><small>Higher or lower data is not universally positive. Market reaction depends on event meaning, positioning and broader context.</small></article>
+	  </section>
+
+	  <section class="s6-intelligence-grid">
+		<article class="s6-module s6-asset-impact"><div class="s6-module-head"><div><span>ASSET IMPACT</span><h2>Potential Sensitivity</h2></div>${macroQualityTag("Preliminary")}</div>${affectedAssets.map((asset, index) => `<div class="s6-impact-row"><strong>${asset}</strong><span>${index < 2 ? "High" : "Moderate"} sensitivity</span><span>${selected.status === "Upcoming" ? "Awaiting Release" : index % 2 ? "Mixed" : "Preliminary Pressure"}</span><span>${index < 2 ? "Low" : "Unavailable"} confidence</span></div>`).join("")}<small>No direction is a Buy or Sell instruction. Verified market reaction is unavailable.</small></article>
+
+		<article class="s6-module"><div class="s6-module-head"><div><span>CURRENT MACRO SENTIMENT</span><h2>Context Map</h2></div>${macroQualityTag("Insufficient Data")}</div>${[["USD Sentiment", "Insufficient Data"], ["Inflation Context", selected.category === "Inflation" ? "Preliminary" : "Insufficient Data"], ["Labour-Market Context", selected.category === "Employment" ? "Preliminary" : "Insufficient Data"], ["Growth Context", selected.category === "Growth" ? "Preliminary" : "Insufficient Data"], ["Rate Expectations", "Insufficient Data"], ["Risk Sentiment", "Mixed"], ["Overall Macro Mode", selected.status === "Upcoming" ? "Awaiting Key Data" : "Mixed Macro Environment"]].map(([label, value]) => `<div class="s6-line"><span>${label}</span><strong>${value}</strong></div>`).join("")}</article>
+
+		<article class="s6-module"><div class="s6-module-head"><div><span>CENTRAL-BANK CONTEXT</span><h2>Policy Context</h2></div>${macroQualityTag("Unavailable")}</div><div class="s6-bank"><strong>Federal Reserve</strong><span>Policy stance: Unavailable</span><span>Recent guidance: Unavailable</span><span>Next decision date: Unavailable</span><span>Market expectation: Unavailable</span></div><p>Verified central-bank source not connected.</p></article>
+
+		<article class="s6-module"><div class="s6-module-head"><div><span>EVENT RISK GUIDANCE</span><h2>Trading Safety</h2></div><span class="s6-risk-level">Insufficient Data</span></div>${[["Pre-event risk", "Monitor"], ["Release volatility risk", selected.impact], ["Spread & liquidity risk", "Unverified"], ["Post-event confirmation", "Required"], ["Suggested wait period", "Unavailable"], ["Overall event risk", "Insufficient Data"]].map(([label, value]) => `<div class="s6-line"><span>${label}</span><strong>${value}</strong></div>`).join("")}<p>Wait for verified information, spread normalisation and structure confirmation before reassessing.</p></article>
+	  </section>
+
+	  <section class="s6-conclusion"><div><span>JARVIS MACRO CONCLUSION</span><h2>${selected.impact}-Impact ${selected.currency} ${selected.category} Context <b>·</b> ${affectedAssets[0] || "Market"} Sensitivity <b>·</b> ${selected.status === "Upcoming" ? "Wait" : "Confirmation Required"}</h2></div><div class="s6-conclusion-grid"><span><small>Main Macro Factor</small>${selected.name}</span><span><small>Most Affected Asset</small>${affectedAssets[0] || "Unavailable"}</span><span><small>Main Uncertainty</small>Verified source unavailable</span><span><small>Decision Status</small>${selected.status === "Upcoming" ? "Wait" : "Confirmation Required"}</span></div></section>
+
+	  <section class="s6-handoff-grid"><article><div><span>ASK JARVIS ABOUT THIS EVENT</span><h3>Discuss the selected macro context</h3><p>Carry the event, interpretation, asset sensitivity and risk context into the current conversation.</p></div><button type="button" id="askJarvisAboutMacro">Ask JARVIS</button></article><article><div><span>OPEN IN AI ANALYSIS</span><h3>Add macro context to analysis</h3><p>Transfer a concise preliminary macro context without overwriting market intelligence.</p></div><button type="button" id="openMacroInAnalysis">Open in AI Analysis</button></article></section>` : ""}
+	</section>
   `;
 	}
 	function economicCalendarPageContent() {
@@ -4314,6 +4514,109 @@
 			const contextualInput = document.querySelector(".ask-page #jarvisQuestion");
 			if (contextualInput) contextualInput.value = state.jarvis.question;
 		});
+		bindMacroIntelligenceActions(page);
+	}
+	function bindMacroIntelligenceActions(page) {
+		const controls = [
+			["#macroDateRange", "dateRange"],
+			["#macroImpact", "impact"],
+			["#macroCurrency", "currency"],
+			["#macroCategory", "category"]
+		];
+		controls.forEach(([selector, key]) => {
+			page.querySelector(selector)?.addEventListener("change", (event) => {
+				state.macroS6[key] = event.currentTarget.value;
+				const first = macroFilteredEvents()[0];
+				state.macroS6.selectedEventId = first?.id || "";
+				render();
+			});
+		});
+		const resetFilters = () => {
+			state.macroS6.dateRange = "Today";
+			state.macroS6.impact = "All";
+			state.macroS6.currency = "All";
+			state.macroS6.category = "All";
+			state.macroS6.selectedEventId = "demo-us-inflation-released";
+			render();
+		};
+		page.querySelector("#resetMacroFilters")?.addEventListener("click", resetFilters);
+		page.querySelector("#emptyResetMacroFilters")?.addEventListener("click", resetFilters);
+		page.querySelector("#changeMacroDateRange")?.addEventListener("click", () => {
+			state.macroS6.dateRange = "This Week";
+			state.macroS6.impact = "All";
+			state.macroS6.currency = "All";
+			state.macroS6.category = "All";
+			state.macroS6.selectedEventId = sprint6MacroEvents[0].id;
+			render();
+		});
+		page.querySelectorAll("[data-macro-event]").forEach((button) => {
+			button.addEventListener("click", () => {
+				state.macroS6.selectedEventId = button.dataset.macroEvent;
+				render();
+			});
+		});
+		page.querySelector("#refreshMacroData")?.addEventListener("click", runMacroRefresh);
+		page.querySelector("#refreshMacroFilters")?.addEventListener("click", runMacroRefresh);
+		page.querySelector("#retryMacroData")?.addEventListener("click", () => {
+			localStorage.removeItem("jarvis-macro-source-error");
+			state.macroS6.error = false;
+			runMacroRefresh();
+		});
+		page.querySelector("#askJarvisAboutMacro")?.addEventListener("click", async () => {
+			const event = macroSelectedEvent();
+			if (!event) return;
+			const context = {
+				eventId: event.id,
+				eventName: event.name,
+				currency: event.currency,
+				impact: event.impact,
+				previous: event.previous,
+				forecast: event.forecast,
+				actual: event.actual,
+				interpretation: event.interpretation,
+				assetImpact: event.assets,
+				risk: "Insufficient Data",
+				quality: event.quality
+			};
+			state.jarvis.conversationState.macroContext = context;
+			state.jarvis.conversationState.currentAsset = event.assets[0] || "";
+			state.jarvis.conversationState.missingInformation = ["Verified macro source", "Verified event timing", "Verified market reaction"];
+			state.jarvis.topic = event.currency;
+			state.jarvis.question = `Explain the ${event.name} demo context for ${event.currency}. Keep the analysis preliminary and state what must be verified.`;
+			state.activePage = "JARVIS";
+			await renderFromTop();
+			const input = document.querySelector(".ask-page #jarvisQuestion");
+			if (input) input.value = state.jarvis.question;
+		});
+		page.querySelector("#openMacroInAnalysis")?.addEventListener("click", () => {
+			const event = macroSelectedEvent();
+			if (!event) return;
+			state.approvedUi.analysisAsset = event.assets.find((asset) => ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "BTCUSD", "DXY", "US100"].includes(asset)) || "XAUUSD";
+			state.approvedUi.macroContext = {
+				eventName: event.name,
+				status: event.status,
+				interpretation: event.interpretation,
+				risk: "Insufficient Data",
+				source: event.quality === "Verified" ? "Verified Macro Data" : "Preliminary Macro Context"
+			};
+			state.activePage = "AIAnalysis";
+			renderFromTop();
+		});
+	}
+	async function runMacroRefresh() {
+		if (state.macroS6.isRefreshing) return;
+		state.macroS6.isRefreshing = true;
+		state.macroS6.refreshStep = 0;
+		state.macroS6.error = false;
+		await render();
+		for (let index = 0; index < 5; index += 1) {
+			await new Promise((resolve) => setTimeout(resolve, 180));
+			state.macroS6.refreshStep = index;
+			await render();
+		}
+		state.macroS6.isRefreshing = false;
+		state.macroS6.dataStatus = "Not Connected";
+		await render();
 	}
 	async function runAiAnalysisRefresh() {
 		if (state.approvedUi.analysisStatus === "loading") return;

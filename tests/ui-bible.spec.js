@@ -311,3 +311,120 @@ test.describe('Sprint 5 Upload Chart', () => {
     expect(mobile.scrollWidth).toBeLessThanOrEqual(mobile.width);
   });
 });
+
+async function openMacroIntelligence(page, mobile = false) {
+  if (mobile) await page.getByRole('button', { name: 'Open navigation' }).click();
+  await page.getByRole('button', { name: 'Macro Intelligence' }).click();
+  await expect(page.locator('.s6-macro-page')).toBeVisible();
+}
+
+test.describe('Sprint 6 Macro Intelligence', () => {
+  test('desktop calendar, filters, selection, refresh and honest data status', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await login(page);
+    await openMacroIntelligence(page);
+
+    await expect(page.getByText('Verified macro source not connected.', { exact: true })).toBeVisible();
+    await expect(page.locator('.s6-head-actions')).toContainText('Data Source Not Connected');
+    await expect(page.locator('.quality-demo').first()).toBeVisible();
+    await expect(page.locator('.s6-event-card')).toHaveCount(2);
+    await expect(page.locator('.release-released')).toHaveCount(1);
+    await expect(page.locator('.release-upcoming')).toHaveCount(1);
+    await expect(page.getByText('3.1% (Demo)', { exact: true }).first()).toBeVisible();
+    await expect(page.getByText('3.2% (Demo)', { exact: true }).first()).toBeVisible();
+    await page.screenshot({ path: 'artifacts/macro-desktop.png', fullPage: true });
+
+    await page.locator('#macroImpact').selectOption('High');
+    await page.locator('#macroCurrency').selectOption('USD');
+    await page.locator('#macroCategory').selectOption('Employment');
+    await expect(page.locator('.s6-event-card')).toHaveCount(1);
+    await expect(page.getByText('Sample Employment Report', { exact: true }).first()).toBeVisible();
+    await page.screenshot({ path: 'artifacts/macro-filter-controls.png', fullPage: false });
+
+    await page.locator('#resetMacroFilters').click();
+    await expect(page.locator('#macroImpact')).toHaveValue('All');
+    await expect(page.locator('#macroCurrency')).toHaveValue('All');
+    await expect(page.locator('#macroCategory')).toHaveValue('All');
+    await page.locator('[data-macro-event="demo-us-employment-upcoming"]').click();
+    await expect(page.locator('.s6-event-detail')).toContainText('Sample Employment Report');
+    await expect(page.locator('.s6-interpretation')).toContainText('Data Unavailable');
+    await page.screenshot({ path: 'artifacts/macro-selected-event-detail.png', fullPage: true });
+
+    await page.locator('[data-macro-event="demo-us-inflation-released"]').click();
+    await expect(page.locator('.s6-interpretation')).toContainText('Weaker Than Expected');
+    await expect(page.locator('.s6-interpretation')).toContainText('-0.1 pp (Demo)');
+    await page.screenshot({ path: 'artifacts/macro-released-interpretation.png', fullPage: true });
+
+    const refresh = page.locator('#refreshMacroData');
+    await refresh.click();
+    await expect(page.getByText('JARVIS is updating macro intelligence...', { exact: true })).toBeVisible();
+    await expect(page.locator('#refreshMacroData')).toBeDisabled();
+    await page.screenshot({ path: 'artifacts/macro-loading-state.png', fullPage: false });
+    await expect(page.getByText('JARVIS is updating macro intelligence...', { exact: true })).toBeHidden({ timeout: 4000 });
+    await expect(page.locator('#macroDateRange')).toHaveValue('Today');
+  });
+
+  test('date filter, empty state and reset work without invented records', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await login(page);
+    await openMacroIntelligence(page);
+    await page.locator('#macroDateRange').selectOption('Tomorrow');
+    await expect(page.locator('.s6-event-card')).toHaveCount(1);
+    await expect(page.getByText('Sample Growth Survey', { exact: true }).first()).toBeVisible();
+    await page.locator('#macroCurrency').selectOption('GBP');
+    await expect(page.getByText('No macro events match the selected filters.', { exact: true })).toBeVisible();
+    await expect(page.locator('.s6-empty')).toContainText('Verified macro source not connected.');
+    await page.screenshot({ path: 'artifacts/macro-empty-filter-state.png', fullPage: false });
+    await page.locator('#emptyResetMacroFilters').click();
+    await expect(page.locator('.s6-event-card')).toHaveCount(2);
+  });
+
+  test('disconnected error state and retry preserve filters', async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('jarvis-macro-source-error', '1'));
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await login(page);
+    await openMacroIntelligence(page);
+    await page.locator('#macroImpact').selectOption('High');
+    await expect(page.getByText('Macro data is temporarily unavailable.', { exact: true })).toBeVisible();
+    await page.screenshot({ path: 'artifacts/macro-disconnected-state.png', fullPage: false });
+    await page.locator('#retryMacroData').click();
+    await expect(page.getByText('JARVIS is updating macro intelligence...', { exact: true })).toBeVisible();
+    await expect(page.getByText('JARVIS is updating macro intelligence...', { exact: true })).toBeHidden({ timeout: 4000 });
+    await expect(page.locator('#macroImpact')).toHaveValue('High');
+    await expect(page.getByText('Macro data is temporarily unavailable.', { exact: true })).toHaveCount(0);
+  });
+
+  test('contextual handoffs preserve selected macro context', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await login(page);
+    await openMacroIntelligence(page);
+    await page.locator('[data-macro-event="demo-us-inflation-released"]').click();
+    await page.locator('#askJarvisAboutMacro').click();
+    await expect(page.locator('.ask-page')).toBeVisible();
+    await expect(page.locator('#jarvisQuestion')).toHaveValue(/Sample Core Inflation Release demo context/);
+
+    await page.getByRole('button', { name: 'Macro Intelligence' }).click();
+    await page.locator('#openMacroInAnalysis').click();
+    await expect(page.locator('.ai-analysis-page')).toBeVisible();
+    await expect(page.locator('#analysisAssetSelect')).toHaveValue('XAUUSD');
+  });
+
+  for (const viewport of [{ width: 390, height: 844 }, { width: 430, height: 932 }]) {
+    test(`mobile macro stays in viewport at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await login(page);
+      await openMacroIntelligence(page, true);
+      await expect(page.locator('.s6-event-card')).toHaveCount(2);
+      const mobile = await page.evaluate(() => ({
+        width: document.documentElement.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        maxCardWidth: Math.max(...[...document.querySelectorAll('.s6-module, .s6-event-card')].map((element) => element.getBoundingClientRect().width)),
+        timezone: document.querySelector('.s6-risk-summary')?.textContent.includes('Timezone:'),
+      }));
+      expect(mobile.scrollWidth).toBeLessThanOrEqual(mobile.width);
+      expect(mobile.maxCardWidth).toBeLessThanOrEqual(mobile.width);
+      expect(mobile.timezone).toBe(true);
+      if (viewport.width === 390) await page.screenshot({ path: 'artifacts/macro-mobile.png', fullPage: true });
+    });
+  }
+});
