@@ -9,13 +9,13 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), { status
 function ok(data, engine) { const status = engine.getStatus(); return json({ success: true, data, meta: { provider: status.aiProvider, timestamp: new Date().toISOString(), dataStatus: status.aiMode === "mock" ? "demo" : status.status }, error: null }); }
 function fail(error, engine) { const code = error?.code || "AI_PROVIDER_UNAVAILABLE"; const [status, message] = ERRORS[code] || [503, "JARVIS could not complete this analysis."]; return json({ success: false, data: null, meta: { provider: engine.getStatus().aiProvider || null, timestamp: new Date().toISOString(), dataStatus: "unavailable" }, error: { code, message } }, status); }
 export async function handleJarvisApiRequest(request, env = {}) {
-  const url = new URL(request.url); if (!url.pathname.startsWith("/api/jarvis/")) return null; const engine = engineFor(env);
+  const url = new URL(request.url); if (!url.pathname.startsWith("/api/jarvis/")) return null; const engine = engineFor(env); const authenticatedUser = request.headers.get("x-jarvis-user-ref");
   try {
     if (request.method === "GET" && url.pathname === "/api/jarvis/status") return ok(await engine.verifyStatus(), engine);
     if (request.method === "GET" && url.pathname === "/api/jarvis/tools") return ok({ tools: engine.registry.list().map(({ inputSchema, outputSchema, ...tool }) => tool) }, engine);
-    if (request.method === "POST" && url.pathname === "/api/jarvis/conversations") { const body = await safeBody(request); return ok(engine.createConversation(body), engine); }
-    const match = url.pathname.match(/^\/api\/jarvis\/conversations\/([^/]+)$/); if (request.method === "GET" && match) { const conversation = engine.getConversation(decodeURIComponent(match[1])); if (!conversation) throw Object.assign(new Error(), { code: "CONVERSATION_NOT_FOUND" }); return ok(conversation, engine); }
-    if (request.method === "POST" && url.pathname === "/api/jarvis/message") return ok(await engine.processMessage(await safeBody(request)), engine);
+    if (request.method === "POST" && url.pathname === "/api/jarvis/conversations") { const body = await safeBody(request); return ok(engine.createConversation({ ...body, userId: authenticatedUser || body.userId || null }), engine); }
+    const match = url.pathname.match(/^\/api\/jarvis\/conversations\/([^/]+)$/); if (request.method === "GET" && match) { const conversation = engine.getConversation(decodeURIComponent(match[1])); if (!conversation || authenticatedUser && conversation.userId !== authenticatedUser) throw Object.assign(new Error(), { code: "CONVERSATION_NOT_FOUND" }); return ok(conversation, engine); }
+    if (request.method === "POST" && url.pathname === "/api/jarvis/message") { const body = await safeBody(request); if (authenticatedUser && body.conversationId) { const existing = engine.getConversation(body.conversationId); if (existing && existing.userId !== authenticatedUser) throw Object.assign(new Error(), { code: "CONVERSATION_NOT_FOUND" }); } return ok(await engine.processMessage({ ...body, userId: authenticatedUser || body.userId || null }), engine); }
     throw Object.assign(new Error(), { code: "INVALID_REQUEST" });
   } catch (error) { return fail(error, engine); }
 }

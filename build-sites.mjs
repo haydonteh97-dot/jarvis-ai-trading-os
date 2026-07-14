@@ -23,18 +23,14 @@ fs.cpSync(path.resolve("server", "macro"), path.join(serverDir, "macro"), { recu
 fs.cpSync(path.resolve("server", "news"), path.join(serverDir, "news"), { recursive: true });
 fs.cpSync(path.resolve("server", "jarvis"), path.join(serverDir, "jarvis"), { recursive: true });
 fs.cpSync(path.resolve("server", "vision"), path.join(serverDir, "vision"), { recursive: true });
+fs.cpSync(path.resolve("server", "platform"), path.join(serverDir, "platform"), { recursive: true });
 fs.writeFileSync(path.join(serverDir, "package.json"), JSON.stringify({ type: "module" }, null, 2));
 
 fs.copyFileSync(path.resolve(".openai", "hosting.json"), path.join(openaiDir, "hosting.json"));
 
 fs.writeFileSync(
   path.join(serverDir, "index.js"),
-  `import { handleMarketApiRequest } from "./market-data/router.js";
-import { handleScannerApiRequest } from "./scanner/router.js";
-import { handleMacroApiRequest } from "./macro/router.js";
-import { handleNewsApiRequest } from "./news/router.js";
-import { handleJarvisApiRequest } from "./jarvis/router.js";
-import { handleVisionApiRequest } from "./vision/router.js";
+  `import { createPlatformApplication } from "./platform/app.js";
 
 const files = {
   "/": { body: ${JSON.stringify(indexHtml)}, type: "text/html; charset=utf-8" },
@@ -46,36 +42,12 @@ const files = {
   "/assets/earth-horizon-master.png": { body: ${JSON.stringify(earthHorizon)}, type: "image/png", encoding: "base64" },
 };
 
-export default {
-  async fetch(request, env) {
+async function staticHandler(request) {
     const url = new URL(request.url);
-    const marketResponse = await handleMarketApiRequest(request, env);
-    if (marketResponse) return marketResponse;
-    const scannerResponse = await handleScannerApiRequest(request, env);
-    if (scannerResponse) return scannerResponse;
-    const macroResponse = await handleMacroApiRequest(request, env);
-    if (macroResponse) return macroResponse;
-    const newsResponse = await handleNewsApiRequest(request, env);
-    if (newsResponse) return newsResponse;
-    const jarvisResponse = await handleJarvisApiRequest(request, env);
-    if (jarvisResponse) return jarvisResponse;
-    const visionResponse = await handleVisionApiRequest(request, env);
-    if (visionResponse) return visionResponse;
-    const file = files[url.pathname];
+    if (request.method !== "GET" && request.method !== "HEAD") return null;
+    const file = files[url.pathname] || (!url.pathname.startsWith("/api/") && !url.pathname.startsWith("/assets/") ? files["/"] : null);
 
-    if (!file) {
-      if (url.pathname.startsWith("/assets/")) {
-        return new Response("Not found", { status: 404 });
-      }
-
-      return new Response(files["/"].body, {
-        status: 200,
-        headers: {
-          "content-type": files["/"].type,
-          "cache-control": "no-cache"
-        }
-      });
-    }
+    if (!file) return null;
 
     const body = file.encoding === "base64"
       ? Uint8Array.from(atob(file.body), (character) => character.charCodeAt(0))
@@ -85,9 +57,16 @@ export default {
       status: 200,
       headers: {
         "content-type": file.type,
-        "cache-control": "public, max-age=60"
+        "cache-control": url.pathname === "/" || url.pathname === "/index.html" ? "no-cache" : "public, max-age=60"
       }
     });
+}
+
+let application;
+export default {
+  async fetch(request, env) {
+    if (!application) application = createPlatformApplication({ env, staticHandler });
+    return application.handle(request);
   }
 };
 `,

@@ -1,6 +1,10 @@
 {
   "scripts": {
     "build": "vite build && node build-sites.mjs",
+    "start": "node --env-file-if-exists=.env server/index.js",
+    "smoke:production": "node scripts/smoke-production.mjs",
+    "test:beta": "node --test tests/beta-readiness.test.mjs",
+    "test:api": "node --test tests/market-data.test.mjs tests/scanner-engine.test.mjs tests/macro-engine.test.mjs tests/news-engine.test.mjs tests/jarvis-core.test.mjs tests/jarvis-openai.test.mjs tests/vision-engine.test.mjs tests/vision-openai.test.mjs tests/beta-readiness.test.mjs",
     "test:market": "node --test tests/market-data.test.mjs",
     "test:scanner": "node --test tests/scanner-engine.test.mjs",
     "test:macro": "node --test tests/macro-engine.test.mjs",
