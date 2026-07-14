@@ -1,0 +1,4 @@
+const windows = new Map(); const active = new Map();
+export function enforceVisionRateLimit(ownerId, action, limit) { const key = `${ownerId}:${action}`, now = Date.now(), current = windows.get(key); if (!current || now - current.startedAt >= 60_000) { windows.set(key, { startedAt: now, count: 1 }); return; } if (current.count >= limit) throw Object.assign(new Error("Vision request rate limited."), { code: "VISION_RATE_LIMITED" }); current.count += 1; }
+export async function withVisionConcurrency(ownerId, action, maximum, operation) { const key = `${ownerId}:${action}`, count = active.get(key) || 0; if (count >= maximum) throw Object.assign(new Error("Too many active Vision requests."), { code: "VISION_CONCURRENCY_LIMITED" }); active.set(key, count + 1); try { return await operation(); } finally { const next = (active.get(key) || 1) - 1; next ? active.set(key, next) : active.delete(key); } }
+export function resetVisionLimits() { windows.clear(); active.clear(); }

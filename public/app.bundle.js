@@ -374,24 +374,120 @@
 	}
 	//#endregion
 	//#region ../Users/USER/Documents/交易指标自动化/jarvis-mvp/core/services/liveMarketDataService.js
-	const quoteProxyUrl = typeof window === "undefined" ? "http://127.0.0.1:4175/api/quote" : "/api/quote";
+	const marketApiBaseUrl = "/api/market";
+	async function requestMarketData(path) {
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), 9000);
+		try {
+			const response = await fetch(`${marketApiBaseUrl}${path}`, {
+				headers: { Accept: "application/json" },
+				signal: controller.signal
+			});
+			const contentType = response.headers.get("content-type") || "";
+			if (!contentType.includes("application/json")) throw new Error("Market API response is not JSON");
+			const payload = await response.json();
+			if (!response.ok || !payload?.success) {
+				const error = new Error(payload?.error?.message || "Market data unavailable");
+				error.code = payload?.error?.code || "MARKET_DATA_UNAVAILABLE";
+				throw error;
+			}
+			return payload;
+		} finally {
+			clearTimeout(timeoutId);
+		}
+	}
+	const marketDataClient = {
+		status: () => requestMarketData("/status"),
+		symbols: () => requestMarketData("/symbols"),
+		quote: (symbol) => requestMarketData(`/quote?symbol=${encodeURIComponent(symbol)}`),
+		candles: (symbol, timeframe, limit = 300) => requestMarketData(`/candles?symbol=${encodeURIComponent(symbol)}&timeframe=${encodeURIComponent(timeframe)}&limit=${encodeURIComponent(limit)}`)
+	};
+	const scannerApiBaseUrl = "/api/scanner";
+	async function requestScannerData(path, options = {}) {
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), 45000);
+		try {
+			const response = await fetch(`${scannerApiBaseUrl}${path}`, {
+				...options,
+				headers: { Accept: "application/json", "Content-Type": "application/json", ...(options.headers || {}) },
+				signal: controller.signal
+			});
+			const payload = await response.json();
+			if (!response.ok || !payload?.success) {
+				const error = new Error(payload?.error?.message || "Opportunity scan unavailable");
+				error.code = payload?.error?.code || "SCANNER_UNAVAILABLE";
+				throw error;
+			}
+			return payload;
+		} finally {
+			clearTimeout(timeoutId);
+		}
+	}
+	const scannerDataClient = {
+		run: (criteria) => requestScannerData("/run", { method: "POST", body: JSON.stringify(criteria) }),
+		latest: () => requestScannerData("/latest")
+	};
+	const macroApiBaseUrl = "/api/macro";
+	async function requestMacroData(path) {
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), 9000);
+		try {
+			const response = await fetch(`${macroApiBaseUrl}${path}`, { headers: { Accept: "application/json" }, signal: controller.signal });
+			const payload = await response.json();
+			if (!response.ok || !payload?.success) {
+				const error = new Error(payload?.error?.message || "Macro data unavailable");
+				error.code = payload?.error?.code || "MACRO_DATA_UNAVAILABLE";
+				throw error;
+			}
+			return payload;
+		} finally {
+			clearTimeout(timeoutId);
+		}
+	}
+	const macroDataClient = {
+		status: () => requestMacroData("/status"),
+		events: () => requestMacroData("/events"),
+		summary: () => requestMacroData("/summary")
+	};
+	const newsApiBaseUrl = "/api/news";
+	async function requestNewsData(path) {
+		const controller = new AbortController();
+		const timeoutId = setTimeout(() => controller.abort(), 9000);
+		try {
+			const response = await fetch(`${newsApiBaseUrl}${path}`, { headers: { Accept: "application/json" }, signal: controller.signal });
+			const payload = await response.json();
+			if (!response.ok || !payload?.success) { const error = new Error(payload?.error?.message || "News data unavailable"); error.code = payload?.error?.code || "NEWS_DATA_UNAVAILABLE"; throw error; }
+			return payload;
+		} finally { clearTimeout(timeoutId); }
+	}
+	const newsDataClient = {
+		status: () => requestNewsData("/status"), articles: () => requestNewsData("/articles"), topStories: () => requestNewsData("/top-stories"), breaking: () => requestNewsData("/breaking"), summary: () => requestNewsData("/summary")
+	};
+	const jarvisApiBaseUrl = "/api/jarvis";
+	async function requestJarvisCore(path, options = {}) {
+		const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 12000);
+		try {
+			const response = await fetch(`${jarvisApiBaseUrl}${path}`, { ...options, headers: { Accept: "application/json", "Content-Type": "application/json", ...(options.headers || {}) }, signal: controller.signal });
+			const payload = await response.json(); if (!response.ok || !payload?.success) { const error = new Error(payload?.error?.message || "JARVIS unavailable"); error.code = payload?.error?.code || "AI_PROVIDER_UNAVAILABLE"; throw error; } return payload;
+		} finally { clearTimeout(timeoutId); }
+	}
+	const jarvisCoreClient = { message: (request) => requestJarvisCore("/message", { method: "POST", body: JSON.stringify(request) }), status: () => requestJarvisCore("/status") };
 	async function getLiveMarketQuote(input = "") {
 		const instrument = resolveInstrument(input);
 		try {
-			const controller = new AbortController();
-			const timeoutId = setTimeout(() => controller.abort(), 1800);
-			const url = `${quoteProxyUrl}?symbol=${encodeURIComponent(instrument.symbol)}`;
-			const response = await fetch(url, { signal: controller.signal });
-			clearTimeout(timeoutId);
-			if (!response.ok) throw new Error(`Quote unavailable: ${response.status}`);
-			const quote = await response.json();
-			if (!quote?.price) throw new Error("Quote payload missing price");
+			const payload = await marketDataClient.quote(instrument.symbol);
+			const quote = payload.data;
+			if (quote?.last == null && quote?.bid == null && quote?.ask == null) throw new Error("Quote payload missing price");
 			return {
 				...quote,
+				price: quote.last ?? quote.bid ?? quote.ask,
+				updatedAt: quote.timestamp,
 				symbol: instrument.symbol,
 				label: instrument.label,
 				type: instrument.type,
-				source: "live"
+				source: quote.dataStatus === "verified" ? "live" : quote.dataStatus,
+				freshness: quote.freshness,
+				provider: quote.provider
 			};
 		} catch {
 			return {
@@ -1660,6 +1756,8 @@
 	const storedPotentialTradeFeedback = JSON.parse(localStorage.getItem("jarvis-trade-feedback") || "[]");
 	const storedPotentialTradeOutcomes = JSON.parse(localStorage.getItem("jarvis-trade-outcomes") || "{}");
 	const storedUiLanguage = localStorage.getItem("jarvis-ui-language") === "zh" ? "zh" : "en";
+	const storedScannerSavedScans = JSON.parse(localStorage.getItem("jarvis-s8-saved-scans") || "[]");
+	const storedScannerSettings = JSON.parse(localStorage.getItem("jarvis-s8-settings") || "null");
 	const storedJarvisMemory = JSON.parse(localStorage.getItem("jarvis-memory") || JSON.stringify({
 		lastIntent: "",
 		previousQuestion: "",
@@ -1683,6 +1781,8 @@
 		}],
 		adminThinking: false,
 		chartUpload: {
+			visionUploadId: null,
+			visionDataStatus: "unavailable",
 			previewUrl: "",
 			fileName: localStorage.getItem("jarvis-chart-file-name") || "",
 			fileSize: 0,
@@ -1717,6 +1817,7 @@
 			pairingFilter: "All"
 		},
 		jarvis: {
+			apiConversationId: localStorage.getItem("jarvis-api-conversation-id") || null,
 			promptIndex: 0,
 			question: "",
 			language: storedUiLanguage,
@@ -1762,7 +1863,18 @@
 			calendarFilter: "Today",
 			settingsTab: "Profile"
 		},
+		marketData: {
+			status: null,
+			symbols: [],
+			analysis: { loading: false, loaded: false, quote: null, candles: null, errorCode: "" },
+			scanner: { loading: false, loaded: false, results: {}, errorCode: "" },
+			planner: { loading: false, loaded: false, quote: null, metadata: null, errorCode: "" }
+		},
 		macroS6: {
+			events: [],
+			loaded: false,
+			provider: null,
+			summary: null,
 			dateRange: "Today",
 			impact: "All",
 			currency: "All",
@@ -1775,6 +1887,10 @@
 			dataStatus: "Not Connected"
 		},
 		newsS7: {
+			stories: [],
+			loaded: false,
+			provider: null,
+			summary: null,
 			category: "All",
 			impact: "All Impact",
 			time: "Latest",
@@ -1784,6 +1900,52 @@
 			error: localStorage.getItem("jarvis-news-source-error") === "1",
 			lastSuccessfulUpdate: "No successful verified update",
 			dataStatus: "Not Connected"
+		},
+		scannerS8: {
+			category: "All Markets",
+			filters: {
+				asset: "All Supported Assets",
+				timeframe: "All",
+				bias: "All",
+				band: "All",
+				setupType: "All",
+				risk: "All",
+				minimumRR: "Any",
+				macroRisk: "All",
+				newsRisk: "All",
+				alignment: "All"
+			},
+			selectedOpportunityId: "",
+			isScanning: false,
+			scanStep: 0,
+			error: false,
+			errorMessage: "",
+			scanId: "",
+			scanState: "ready",
+			results: [],
+			lastSuccessfulScan: "No completed scan",
+			dataStatus: "Unavailable",
+			marketsRequested: 0,
+			marketsCompleted: 0,
+			marketsPartial: 0,
+			marketsUnavailable: 0,
+			validSetups: 0,
+			rejectedSetups: 0,
+			marketOverview: null,
+			distribution: null,
+			marketDataTimestamp: "",
+			savedScans: storedScannerSavedScans,
+			settings: storedScannerSettings || {
+				highThreshold: 75,
+				mediumThreshold: 50,
+				minimumRR: "Any",
+				maximumRisk: "High",
+				includeMacro: true,
+				includeNews: true,
+				includeWatchlist: false,
+				freshnessTolerance: "15 minutes"
+			},
+			message: ""
 		}
 	};
 	const logoSrc = "data:image/webp;base64,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";
@@ -2882,6 +3044,7 @@
 		if (!alreadyLocked) state.jarvis.isProcessing = true;
 		try {
 			await runThinkingSequence();
+			if (await processQuestionWithJarvisCore()) return;
 			const contextQuestion = questionWithTopic(state.jarvis.question);
 			const route = routeJarvisInput({
 				input: state.jarvis.question || contextQuestion,
@@ -2981,6 +3144,51 @@
 		} finally {
 			state.jarvis.isProcessing = false;
 			refreshMissionControlOnly();
+		}
+	}
+	async function processQuestionWithJarvisCore() {
+		try {
+			const context = {
+				selectedAsset: state.jarvis.topic || state.jarvis.conversationState.currentAsset || null,
+				selectedTimeframe: state.jarvis.conversationState.timeframe || null,
+				selectedOpportunityId: state.jarvis.conversationState.scannerContext?.opportunityId || null,
+				selectedNewsId: state.jarvis.conversationState.newsContext?.articleId || null,
+				selectedMacroEventId: state.jarvis.conversationState.macroContext?.eventId || null,
+				selectedTradePlanId: state.jarvis.conversationState.currentTradeId || null,
+				uploadedChartId: state.chartUpload.visionUploadId || state.chartUpload.history[0]?.missionId || null,
+				analysisSummary: state.jarvis.quickAnalysis ? { bias: state.jarvis.quickAnalysis.bias, risk: state.jarvis.quickAnalysis.risk } : null,
+				riskContext: state.jarvis.conversationState.missingInformation || [],
+				chartContext: state.chartUpload.analysis ? { asset: state.chartUpload.asset, timeframe: state.chartUpload.timeframe, status: state.chartUpload.status } : null,
+				tradePlanContext: state.jarvis.conversationState.currentTradePlan || null
+			};
+			const payload = await jarvisCoreClient.message({ conversationId: state.jarvis.apiConversationId, message: state.jarvis.question, language: state.jarvis.language, activePage: "ask_jarvis", context });
+			const response = payload.data; state.jarvis.apiConversationId = response.conversationId; localStorage.setItem("jarvis-api-conversation-id", response.conversationId);
+			state.jarvis.intent = response.intent.join(" + "); state.jarvis.status = response.dataQuality === "verified" ? "quickReady" : "partial";
+			const sourceLines = response.sources.map((source) => `${source.tool}: ${source.source} · ${source.dataStatus}${source.freshness && source.freshness !== "unavailable" ? ` · ${source.freshness}` : ""}`);
+			const missingLines = response.missingData.map((item) => `${item} unavailable`);
+			const model = {
+				language: response.language, instrument: context.selectedAsset || "Context Required", freshness: response.dataQuality,
+				bias: response.answer.marketBias ? macroTitleCase(response.answer.marketBias) : "Unavailable", confidence: null, confidenceLabel: response.dataQuality,
+				trend: "Unavailable", structure: response.answer.mainFactors.length ? response.answer.mainFactors : ["Verified structure unavailable"],
+				tradePlan: { entry: "Unavailable", stopLoss: "Unavailable", takeProfit1: "Unavailable", takeProfit2: "Unavailable", takeProfit3: "Unavailable", riskReward: "Unavailable" },
+				macro: sourceLines.filter((item) => item.startsWith("macro.")).concat(missingLines.filter((item) => item.startsWith("macro."))).slice(0, 3),
+				news: sourceLines.filter((item) => item.startsWith("news.")).concat(missingLines.filter((item) => item.startsWith("news."))).slice(0, 5),
+				reasoning: [...response.answer.mainFactors, ...response.answer.mainRisks].slice(0, 6), jarvisView: `${response.answer.headline} · ${response.answer.decisionStatus}`, nextStep: response.answer.nextConfirmation || response.answer.decisionStatus,
+				disclaimer: response.answer.riskWarning || mentorText("The final trading decision remains with you.", "最终交易决定由你作出。")
+			};
+			state.jarvis.mentorNote = response.answer.summary;
+			replaceThinkingMessage({ text: response.answer.summary, responseModel: model, suggestions: response.followUpOptions });
+			state.jarvis.timeline = [...state.jarvis.timeline, mentorText("Core Agent response prepared", "Core Agent 已完成回答")];
+			return true;
+		} catch (error) {
+			if (!String(error?.code || "").startsWith("AI_")) return false;
+			const rateLimited = error.code === "AI_RATE_LIMITED";
+			const text = state.jarvis.language === "zh" ? rateLimited ? "JARVIS AI 目前达到请求额度或速率限制。你的对话已保留，请稍后重试。" : "JARVIS AI 目前无法完成这次请求。你的对话已保留，系统不会用 Demo 数据冒充 Live 回答。" : rateLimited ? "JARVIS AI has reached a request or quota limit. Your conversation is preserved; please retry later." : "JARVIS AI cannot complete this request right now. Your conversation is preserved, and Demo data will not be shown as Live.";
+			state.jarvis.status = "error";
+			state.jarvis.mentorNote = text;
+			replaceThinkingMessage({ text, attention: true, suggestions: state.jarvis.language === "zh" ? ["稍后重试", "检查资料状态"] : ["Retry later", "Check data status"] });
+			state.jarvis.timeline = [...state.jarvis.timeline, state.jarvis.language === "zh" ? "Live AI 暂时不可用" : "Live AI unavailable"];
+			return true;
 		}
 	}
 	function addMasterChat(message) {
@@ -3190,6 +3398,17 @@
 			renderFromTop();
 		});
 	}
+	function getVisionSessionId() {
+		let sessionId = localStorage.getItem("jarvis-vision-session-id");
+		if (!sessionId) {
+			sessionId = `vision-session-${crypto.randomUUID()}`;
+			localStorage.setItem("jarvis-vision-session-id", sessionId);
+		}
+		return sessionId;
+	}
+	function revokeChartPreview() {
+		if (state.chartUpload.previewUrl?.startsWith("blob:")) URL.revokeObjectURL(state.chartUpload.previewUrl);
+	}
 	function resetChartAnalysisState() {
 		state.chartUpload.analysis = null;
 		state.chartUpload.result = null;
@@ -3197,9 +3416,16 @@
 		state.chartUpload.isAnalyzing = false;
 		localStorage.removeItem("jarvis-chart-analysis");
 	}
-	function clearChartUpload() {
+	async function clearChartUpload() {
+		const uploadId = state.chartUpload.visionUploadId;
+		if (uploadId) {
+			try { await fetch(`/api/vision/uploads/${encodeURIComponent(uploadId)}`, { method: "DELETE", headers: { "x-jarvis-session-id": getVisionSessionId() } }); } catch { console.warn("Vision image deletion could not be confirmed."); }
+		}
+		revokeChartPreview();
 		state.chartUpload.previewUrl = "";
 		state.chartUpload.fileName = "";
+		state.chartUpload.visionUploadId = null;
+		state.chartUpload.visionDataStatus = "unavailable";
 		state.chartUpload.fileSize = 0;
 		state.chartUpload.fileType = "";
 		state.chartUpload.width = 0;
@@ -3212,6 +3438,7 @@
 		renderFromTop();
 	}
 	function chartUploadError(message, status = "error") {
+		revokeChartPreview();
 		state.chartUpload.status = status;
 		state.chartUpload.error = message;
 		state.chartUpload.previewUrl = "";
@@ -3243,22 +3470,18 @@
 		state.chartUpload.error = "";
 		await render();
 		try {
-			const previewUrl = await new Promise((resolve, reject) => {
-				const reader = new FileReader();
-				reader.onerror = () => reject(new Error("read-failed"));
-				reader.onload = () => resolve(reader.result);
-				reader.readAsDataURL(file);
-			});
+			const previewUrl = URL.createObjectURL(file);
 			const dimensions = await new Promise((resolve, reject) => {
 				const image = new Image();
 				image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight });
-				image.onerror = () => reject(new Error("decode-failed"));
+				image.onerror = () => { URL.revokeObjectURL(previewUrl); reject(new Error("decode-failed")); };
 				image.src = previewUrl;
 			});
-			if (dimensions.width < 320 || dimensions.height < 180) {
+			if (dimensions.width < 480 || dimensions.height < 320) {
 				chartUploadError(isZh ? "JARVIS 无法读取足够的图表信息。请上传更清晰的图片。" : "JARVIS could not read enough chart information. Upload a clearer image.", "unreadable");
 				return;
 			}
+			revokeChartPreview();
 			state.chartUpload.previewUrl = previewUrl;
 			state.chartUpload.fileName = file.name;
 			state.chartUpload.fileSize = file.size;
@@ -3267,6 +3490,27 @@
 			state.chartUpload.height = dimensions.height;
 			state.chartUpload.status = "ready";
 			state.chartUpload.error = "";
+			state.chartUpload.visionUploadId = null;
+			state.chartUpload.visionDataStatus = "unavailable";
+			try {
+				const form = new FormData();
+				form.append("file", file);
+				form.append("asset", state.chartUpload.asset);
+				form.append("timeframe", state.chartUpload.timeframe);
+				const response = await fetch("/api/vision/uploads", { method: "POST", headers: { "x-jarvis-session-id": getVisionSessionId() }, body: form });
+				if (!String(response.headers.get("content-type") || "").includes("application/json")) throw new Error("vision-api-unavailable");
+				const payload = await response.json();
+				if (!response.ok || !payload.success) {
+					chartUploadError(payload.error?.message || (isZh ? "图表上传暂时不可用。" : "Chart upload is temporarily unavailable."));
+					return;
+				}
+				if (response.ok && payload.success) {
+					state.chartUpload.visionUploadId = payload.data.id;
+					state.chartUpload.visionDataStatus = payload.meta?.dataStatus || "demo";
+				}
+			} catch (visionError) {
+				console.warn("Vision foundation is unavailable; local preview remains available.");
+			}
 			resetChartAnalysisState();
 			localStorage.setItem("jarvis-chart-file-name", state.chartUpload.fileName);
 			await render();
@@ -3316,7 +3560,18 @@
 				await render();
 				await new Promise((resolve) => setTimeout(resolve, 220));
 			}
+			let visionResult = null;
+			if (chart.visionUploadId) {
+				const response = await fetch("/api/vision/analysis", { method: "POST", headers: { "content-type": "application/json", "x-jarvis-session-id": getVisionSessionId() }, body: JSON.stringify({ imageId: chart.visionUploadId, userContext: { asset: chart.asset, timeframe: chart.timeframe }, requestedObservations: ["trend", "structure", "swings", "support_resistance", "liquidity", "annotations", "trade_levels"], verifyWithMarketData: true }) });
+				const payload = await response.json();
+				if (response.ok && payload.success) visionResult = payload.data;
+			}
 			chart.result = buildSafeChartResult();
+			if (visionResult) {
+				chart.result.chartQuality = visionResult.chartContext?.imageQuality || chart.result.chartQuality;
+				chart.result.reliability = visionResult.summary?.decisionStatus === "unavailable" ? (isZh ? "视觉服务未连接" : "Vision Not Connected") : (visionResult.summary?.decisionStatus || chart.result.reliability);
+				chart.result.source = visionResult.provider === "MockVisionProvider" ? (isZh ? "用户提供图表 • Demo 视觉基础" : "User-Provided Chart • Demo Vision Foundation") : chart.result.source;
+			}
 			chart.analysis = {
 				pair: chart.asset,
 				instrument: chart.asset,
@@ -4146,15 +4401,25 @@
 		const asset = state.approvedUi.analysisAsset;
 		const timeframe = state.approvedUi.analysisTimeframe;
 		const isLoading = state.approvedUi.analysisStatus === "loading";
+		const marketInput = state.marketData.analysis;
+		const marketQuote = marketInput.quote;
+		const marketCandles = marketInput.candles;
+		const marketVerified = marketQuote?.dataStatus === "verified" && marketQuote?.freshness === "current";
+		const analysisSymbols = state.marketData.symbols.length ? state.marketData.symbols.filter((item) => item.supported).map((item) => item.symbol) : ["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "BTCUSD"];
+		const activeSymbolMetadata = state.marketData.symbols.find((item) => item.symbol === asset);
+		const analysisTimeframes = activeSymbolMetadata?.timeframes || ["D1", "H4", "H1", "M30", "M15", "M5"];
 		const hasChart = Boolean(state.chartUpload.previewUrl);
 		const analysis = state.chartUpload.analysis || state.jarvis.quickAnalysis;
-		const dataStatus = hasChart ? isZh ? "图表背景" : "Chart Context" : isZh ? "数据源未连接" : "Data Source Not Connected";
+		const dataStatus = marketQuote
+			? `${marketQuote.provider} · ${marketQuote.dataStatus} · ${marketQuote.freshness}`
+			: hasChart ? isZh ? "图表背景" : "Chart Context" : isZh ? "数据源未连接" : "Data Source Not Connected";
 		const bias = hasChart && ["Bullish", "Bearish", "Neutral"].includes(analysis?.bias) ? analysis.bias : "Neutral";
 		const structure = hasChart ? analysis?.marketStructure || (isZh ? "等待图表确认" : "Awaiting chart confirmation") : isZh ? "等待数据" : "Awaiting Data";
 		const unavailable = isZh ? "等待已验证市场数据" : "Awaiting verified market data";
 		const chartRequired = isZh ? "上传图表以获得准确的 Entry / SL / TP" : "Upload chart for accurate Entry / SL / TP";
-		const refreshed = state.approvedUi.analysisLastUpdated ? new Date(state.approvedUi.analysisLastUpdated).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
-		const lastUpdated = refreshed ? `${isZh ? "页面刷新" : "Page refreshed"} ${refreshed}` : isZh ? "最后更新时间不可用" : "Last updated unavailable";
+		const refreshed = marketQuote?.timestamp ? new Date(marketQuote.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+		const lastUpdated = refreshed ? `${isZh ? "市场更新" : "Market updated"} ${refreshed}` : isZh ? "最后更新时间不可用" : "Last updated unavailable";
+		const formattedQuote = marketQuote?.last != null ? Number(marketQuote.last).toLocaleString(void 0, { maximumFractionDigits: asset === "USDJPY" ? 3 : asset.includes("USD") && !["XAUUSD", "BTCUSD"].includes(asset) ? 5 : 2 }) : null;
 		const row = (label, value, tone = "") => `<div class="analysis-data-row"><span>${label}</span><strong class="${tone}">${value}</strong></div>`;
 		const status = (value, tone = "muted") => `<span class="analysis-status ${tone}">${value}</span>`;
 		const unavailableList = (count, text) => `<ul class="analysis-compact-list">${Array.from({ length: count }, () => `<li>${text}</li>`).join("")}</ul>`;
@@ -4168,8 +4433,8 @@
         </div>
       </header>
       <section class="analysis-selector-row" aria-label="${isZh ? "分析控制" : "Analysis controls"}">
-        <label><span>${isZh ? "资产" : "Asset"}</span><select id="analysisAssetSelect" aria-label="Asset">${["XAUUSD", "EURUSD", "GBPUSD", "USDJPY", "BTCUSD"].map((value) => `<option value="${value}" ${value === asset ? "selected" : ""}>${value}</option>`).join("")}</select></label>
-        <label><span>${isZh ? "周期" : "Timeframe"}</span><select id="analysisTimeframeSelect" aria-label="Timeframe">${["D1", "H4", "H1", "M15"].map((value) => `<option value="${value}" ${value === timeframe ? "selected" : ""}>${value}</option>`).join("")}</select></label>
+		<label><span>${isZh ? "资产" : "Asset"}</span><select id="analysisAssetSelect" aria-label="Asset">${analysisSymbols.map((value) => `<option value="${value}" ${value === asset ? "selected" : ""}>${value}</option>`).join("")}</select></label>
+		<label><span>${isZh ? "周期" : "Timeframe"}</span><select id="analysisTimeframeSelect" aria-label="Timeframe">${analysisTimeframes.map((value) => `<option value="${value}" ${value === timeframe ? "selected" : ""}>${value}</option>`).join("")}</select></label>
       </section>
       ${state.approvedUi.analysisError ? `<section class="analysis-error-state" role="alert"><div><strong>${isZh ? "分析暂不可用" : "Analysis unavailable"}</strong><p>${isZh ? "JARVIS 无法完成分析。请重试或检查数据连接。" : "JARVIS could not complete the analysis. Please retry or verify the data connection."}</p><small>${dataStatus}</small></div><button id="retryAiAnalysis" type="button">${isZh ? "重试" : "Retry"}</button></section>` : ""}
       <div class="analysis-loading-state" role="status" aria-live="polite" aria-hidden="${!isLoading}"><i></i><span>${isZh ? "JARVIS 正在分析..." : "JARVIS is analysing..."}</span></div>
@@ -4181,15 +4446,15 @@
             ${row(isZh ? "市场模式" : "Market Mode", hasChart ? isZh ? "等待确认" : "Awaiting Confirmation" : isZh ? "等待数据" : "Awaiting Data")}
             ${row(isZh ? "趋势强度" : "Trend Strength", isZh ? "数据不足" : "Insufficient Data")}
             <div class="analysis-confidence"><span>${isZh ? "信心" : "Confidence"}</span><div class="confidence-ring preliminary"><strong>—</strong></div><small>${isZh ? "初步信心" : "Preliminary Confidence"}</small></div>
-            ${row(isZh ? "价格状态" : "Price Status", isZh ? "等待价格数据" : "Awaiting Price Data")}
-            ${row(isZh ? "分析质量" : "Analysis Quality", hasChart ? isZh ? "图表背景" : "Chart Context" : isZh ? "需要数据" : "Data Required")}
+			${row(isZh ? "价格状态" : "Price Status", formattedQuote ? `${formattedQuote} · ${marketQuote.freshness}` : isZh ? "等待价格数据" : "Awaiting Price Data", marketVerified ? "positive" : "")}
+			${row(isZh ? "分析质量" : "Analysis Quality", marketCandles ? `${isZh ? "初步 OHLC 输入" : "Preliminary OHLC Input"} · ${marketCandles.candles.length}` : hasChart ? isZh ? "图表背景" : "Chart Context" : isZh ? "需要数据" : "Data Required")}
           </div>
         </article>
         <article class="analysis-module mtf-module">
           <div class="analysis-module-title"><h2>${isZh ? "多周期一致性" : "Multi-Timeframe Alignment"}</h2></div>
           <div class="mtf-grid">${["D1", "H4", "H1", "M15"].map((tf) => `<div><span>${tf}</span><strong>${isZh ? "等待数据" : "Awaiting Data"}</strong></div>`).join("")}</div>
           ${row(isZh ? "整体一致性" : "Overall Alignment", isZh ? "等待数据" : "Awaiting Data")}
-          <p class="module-note">${isZh ? "连接已验证市场数据后，JARVIS 才能比较各周期。" : "Connect verified market data before JARVIS compares timeframes."}</p>
+		  <p class="module-note">${marketCandles ? isZh ? "已验证 OHLC 已载入；多周期分析引擎尚未启用。" : "Verified OHLC is loaded; the multi-timeframe analysis engine is not active yet." : isZh ? "连接已验证市场数据后，JARVIS 才能比较各周期。" : "Connect verified market data before JARVIS compares timeframes."}</p>
         </article>
         <article class="analysis-module structure-module">
           <div class="analysis-module-title"><h2>${isZh ? `市场结构 (${timeframe})` : `Market Structure (${timeframe})`}</h2></div>
@@ -4279,36 +4544,179 @@
     </section>
   `;
 	}
+	const S8_SCORING_WEIGHTS = {
+		trendAlignment: 20,
+		marketStructure: 20,
+		liquidityContext: 15,
+		volatilitySuitability: 10,
+		setupConfirmation: 15,
+		riskRewardQuality: 10,
+		macroRisk: 5,
+		newsRisk: 5
+	};
+	function s8Escape(value = "") {
+		return String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[character]);
+	}
+	function s8RankedOpportunities() {
+		return [...state.scannerS8.results].sort((left, right) => right.score - left.score || left.asset.localeCompare(right.asset));
+	}
+	function s8FilteredOpportunities() {
+		const scanner = state.scannerS8;
+		const filters = scanner.filters;
+		const minimumRR = { Any: 0, "1:1 or higher": 1, "1:1.5 or higher": 1.5, "1:2 or higher": 2, "1:3 or higher": 3 }[filters.minimumRR] || 0;
+		return s8RankedOpportunities().filter((item) => {
+			if (scanner.category !== "All Markets" && item.category !== scanner.category) return false;
+			if (filters.asset !== "All Supported Assets" && item.asset !== filters.asset) return false;
+			if (filters.timeframe !== "All" && item.timeframe !== filters.timeframe) return false;
+			if (filters.bias !== "All" && item.bias !== filters.bias) return false;
+			if (filters.band !== "All" && item.band !== filters.band) return false;
+			if (filters.setupType !== "All" && item.setupType !== filters.setupType) return false;
+			if (filters.risk !== "All" && item.risk !== filters.risk) return false;
+			if (filters.macroRisk !== "All" && item.macroRisk !== filters.macroRisk) return false;
+			if (filters.newsRisk !== "All" && item.newsRisk !== filters.newsRisk) return false;
+			if (filters.alignment !== "All" && item.alignment !== filters.alignment) return false;
+			if (minimumRR > 0) return false;
+			return true;
+		});
+	}
+	function s8SelectedOpportunity() {
+		const all = s8RankedOpportunities();
+		return all.find((item) => item.id === state.scannerS8.selectedOpportunityId) || s8FilteredOpportunities()[0] || all[0];
+	}
+	function s8Summary(filtered) {
+		const counts = { High: 0, Medium: 0, Low: 0, rejected: 0 };
+		filtered.forEach((item) => item.score === 0 ? counts.rejected += 1 : counts[item.band] += 1);
+		const valid = filtered.filter((item) => item.score > 0);
+		const biasWeights = valid.reduce((result, item) => {
+			result[item.bias] = (result[item.bias] || 0) + item.score;
+			return result;
+		}, {});
+		const sortedBias = Object.entries(biasWeights).sort((left, right) => right[1] - left[1]);
+		const overallBias = !valid.length ? "Insufficient Data" : sortedBias.length > 1 && sortedBias[0][1] < sortedBias[1][1] * 1.25 ? "Mixed" : sortedBias[0][0];
+		return { ...counts, valid: valid.length, scanned: filtered.length, overallBias };
+	}
+	function s8SelectControl(id, label, values, selected) {
+		return `<label class="s8-filter"><span>${label}</span><select id="${id}" aria-label="${label}">${values.map((value) => `<option value="${value}" ${value === selected ? "selected" : ""}>${value}</option>`).join("")}</select></label>`;
+	}
+	function s8QualityBadge(value) {
+		return `<span class="s8-badge s8-quality">${value}</span>`;
+	}
+	function s8StatusBadge(value) {
+		return `<span class="s8-badge status-${value.toLowerCase().replace(/\s+/g, "-")}">${value}</span>`;
+	}
+	function s8OpportunityRow(item, rank) {
+		return `<button class="s8-opportunity-row ${item.id === state.scannerS8.selectedOpportunityId ? "is-selected" : ""}" type="button" data-s8-opportunity="${item.id}" aria-pressed="${item.id === state.scannerS8.selectedOpportunityId}">
+			<span class="s8-rank">${rank}</span><span class="s8-asset"><strong>${item.asset}</strong><small>${item.market}</small></span>
+			<span><strong>${item.setupType}</strong><small>${item.timeframe} · ${item.alignment}</small></span>
+			<span class="s8-score"><strong>${item.score}/100</strong><i style="--score:${item.score}%"></i><small>${item.band} Setup Quality</small></span>
+			<span>${item.bias}<small>${item.risk} Risk</small></span>
+			<span>${item.rr}<small>${item.confirmation}</small></span>
+			<span>${s8QualityBadge(item.dataQuality)}<small>View Setup</small></span>
+		</button>`;
+	}
+	function s8ScoreLine(label, key, item) {
+		const maximum = S8_SCORING_WEIGHTS[key];
+		const value = item.components[key] || 0;
+		return `<div class="s8-score-line"><span>${label}</span><div><i style="--score:${value / maximum * 100}%"></i></div><strong>${value}/${maximum}</strong></div>`;
+	}
+	function s8Checklist(item) {
+		const checks = [
+			["Higher timeframe aligned", item.components.trendAlignment >= 15 ? "Confirmed" : item.components.trendAlignment >= 8 ? "Waiting" : "Failed"],
+			["Selected timeframe structure valid", item.components.marketStructure >= 14 ? "Confirmed" : item.components.marketStructure > 0 ? "Waiting" : "Unavailable"],
+			["Liquidity context valid", item.components.liquidityContext >= 10 ? "Confirmed" : item.components.liquidityContext > 0 ? "Waiting" : "Unavailable"],
+			["Entry zone defined", "Unavailable"], ["Invalidation defined", "Unavailable"], ["RR acceptable", "Unavailable"],
+			["Macro window clear", "Unavailable"], ["News risk clear", "Unavailable"],
+			["Volatility suitable", item.components.volatilitySuitability >= 6 ? "Confirmed" : item.components.volatilitySuitability > 0 ? "Waiting" : "Unavailable"],
+			["Final confirmation complete", item.hardReject ? "Failed" : item.components.setupConfirmation >= 13 ? "Confirmed" : "Waiting"]
+		];
+		return checks.map(([label, status]) => `<li><span>${label}</span>${s8StatusBadge(status)}</li>`).join("");
+	}
+	function s8SavedScansMarkup() {
+		const scans = state.scannerS8.savedScans;
+		if (!scans.length) return `<p class="s8-muted">No saved scan criteria yet. Saved scans never present old results as current opportunities.</p>`;
+		return `<div class="s8-saved-list">${scans.map((scan) => `<div><span><strong>${s8Escape(scan.name)}</strong><small>Criteria only · ${s8Escape(scan.savedAt)}</small></span><button type="button" data-s8-load-scan="${scan.id}">Load</button><button type="button" data-s8-rename-scan="${scan.id}">Rename</button><button type="button" data-s8-delete-scan="${scan.id}">Delete</button></div>`).join("")}</div>`;
+	}
 	function opportunityScannerPageContent() {
-		const filter = state.approvedUi.opportunityFilter;
-		const rows = getVisiblePotentialTrades().filter((trade) => filter === "All" || trade.assetClass === filter || filter === "Commodities" && trade.assetClass === "Gold").slice(0, 8);
+		const scanner = state.scannerS8;
+		const marketFoundationReady = scanner.marketsCompleted > 0;
+		const filtered = s8FilteredOpportunities();
+		const selected = s8SelectedOpportunity();
+		const summary = s8Summary(filtered);
+		const supportedAssets = [...new Set((state.marketData.symbols || []).filter((item) => item.supported).map((item) => item.symbol).concat(scanner.results.map((item) => item.asset)))];
+		const overviewPoints = scanner.marketOverview?.points || ["Run a scan to evaluate verified D1, H4 and H1 candles.", "Macro risk: unavailable, never treated as clear.", "News risk: unavailable, never treated as safe."];
+		const categories = ["All Markets", "Forex", "Gold", "Crypto", "Stocks", "Indices", "Commodities"];
+		const scanSteps = ["Checking market data...", "Analysing multi-timeframe trend...", "Reading market structure...", "Evaluating liquidity...", "Checking volatility...", "Checking macro risk...", "Checking news risk...", "Ranking valid opportunities..."];
 		return `
-    <section class="approved-workspace">
-      <div class="approved-page-head"><div><h1>Opportunity Scanner</h1><p>AI selected high-probability setups</p></div></div>
-      <div class="approved-tabs">${[
-			"All",
-			"Forex",
-			"Crypto",
-			"Stocks",
-			"Commodities"
-		].map((item) => `<button class="${item === filter ? "active" : ""}" type="button" data-opportunity-filter="${item}">${item}</button>`).join("")}</div>
-      <article class="table-card">
-        <div class="opportunity-table">
-          <div class="table-head"><span>Asset</span><span>Opportunity</span><span>Timeframe</span><span>Confidence</span><span>Current State</span></div>
-          ${rows.map((trade) => `
-              <button class="opportunity-row" type="button" data-open-trade="${trade.id}">
-                <strong>${trade.asset}</strong>
-                <span>${normalizeOpportunityName(trade.direction)}</span>
-                <span>H1</span>
-                <span>${trade.confidence}</span>
-                ${statusBadge(normalizeOpportunityStatus(trade.status))}
-              </button>
-            `).join("")}
-        </div>
-      </article>
-      ${potentialTradeDetailPanel()}
-    </section>
-  `;
+	<section class="s8-scanner-page">
+	  <header class="s8-page-head">
+	    <div><span class="s8-kicker">MULTI-MARKET DECISION SUPPORT</span><h1>Opportunity Scanner</h1><p>JARVIS scans supported markets to identify opportunities worth deeper analysis.</p></div>
+	    <div class="s8-head-actions"><div><span>Last Scan <strong>${scanner.lastSuccessfulScan}</strong></span><span>${s8StatusBadge(scanner.isScanning ? "Scanning" : scanner.error ? "Scan Failed" : "Partial Scan")}</span></div><button id="runS8Scan" type="button" ${scanner.isScanning ? "disabled" : ""}>${scanner.isScanning ? "Scanning..." : "Run New Scan"}</button></div>
+	  </header>
+	  <section class="s8-source-notice"><div><strong>${marketFoundationReady ? "Deterministic Scanner · Verified Candle Input" : "Scanner Data Unavailable"}</strong><p>${marketFoundationReady ? "Rankings use verified multi-timeframe candles. Opportunity Score measures setup quality, not win rate." : "Run a scan to check supported markets. No opportunity is generated without valid candle data and structure."}</p></div>${s8QualityBadge(marketFoundationReady ? scanner.dataStatus : "Unavailable")}</section>
+	  ${scanner.error ? `<section class="s8-error" role="alert"><div><strong>The opportunity scan could not be completed.</strong><p>${s8Escape(scanner.errorMessage || "Your filters and previous completed results have been preserved.")}</p><small>Market data status is reported by the shared provider. Macro and News remain unavailable.</small></div><button id="retryS8Scan" type="button">Retry</button></section>` : ""}
+	  ${scanner.isScanning ? `<section class="s8-loading" role="status" aria-live="polite"><div class="s8-orbit"><i></i></div><div><strong>JARVIS is scanning supported markets...</strong>${scanSteps.map((step, index) => `<span class="${index <= scanner.scanStep ? "active" : ""}">${step}</span>`).join("")}</div></section>` : ""}
+	  <section class="s8-scan-status">
+	    <div><span>Scan State</span><strong>${scanner.isScanning ? "Scanning" : scanner.error ? "Scan Failed" : scanner.scanState === "partial" ? "Partial Scan Completed" : scanner.scanState === "completed" ? "Completed" : "Ready"}</strong><small>Deterministic Multi-Timeframe Scan</small></div>
+	    <div><span>Markets Requested</span><strong>${scanner.marketsRequested || 5}</strong><small>Central supported-symbol registry</small></div>
+	    <div><span>Markets Completed</span><strong>${scanner.marketsCompleted}</strong><small>${marketFoundationReady ? "Verified candle inputs" : "No verified inputs"}</small></div>
+	    <div><span>Markets Unavailable</span><strong>${scanner.marketsUnavailable ?? 0}</strong><small>${scanner.marketsPartial || 0} partial · ${marketFoundationReady ? "Provider results preserved" : "Market source unavailable"}</small></div>
+	    <div><span>Data Freshness</span><strong>${marketFoundationReady ? "Provider Timestamp" : "Unavailable"}</strong><small>${scanner.marketDataTimestamp || "No live timestamp"}</small></div>
+	    <div><span>Data Quality</span><strong>${scanner.dataStatus}</strong><small>Macro + News contribute 0 until connected</small></div>
+	  </section>
+	  <nav class="s8-category-filters" aria-label="Market categories">${categories.map((category) => `<button type="button" class="${scanner.category === category ? "active" : ""}" data-s8-category="${category}">${category}</button>`).join("")}</nav>
+	  <details class="s8-advanced">
+	    <summary>Advanced Filters <span>Asset, timeframe, setup, risk and alignment</span></summary>
+	    <div class="s8-filter-grid">
+	      ${s8SelectControl("s8Asset", "Asset", ["All Supported Assets", ...supportedAssets], scanner.filters.asset)}
+	      ${s8SelectControl("s8Timeframe", "Timeframe", ["All", "D1", "H4", "H1", "M15"], scanner.filters.timeframe)}
+	      ${s8SelectControl("s8Bias", "Bias", ["All", "Bullish", "Bearish", "Neutral", "Mixed"], scanner.filters.bias)}
+	      ${s8SelectControl("s8Band", "Probability Band", ["All", "High", "Medium", "Low", "No Valid Setup"], scanner.filters.band)}
+	      ${s8SelectControl("s8SetupType", "Setup Type", ["All", "Breakout", "Pullback", "Bullish Pullback", "Bearish Continuation", "Reversal Watch", "Range Break", "Liquidity Sweep", "Consolidation Break", "No Valid Setup"], scanner.filters.setupType)}
+	      ${s8SelectControl("s8Risk", "Risk Level", ["All", "Low", "Moderate", "High", "Extreme"], scanner.filters.risk)}
+	      ${s8SelectControl("s8MinimumRR", "Minimum Risk/Reward", ["Any", "1:1 or higher", "1:1.5 or higher", "1:2 or higher", "1:3 or higher"], scanner.filters.minimumRR)}
+	      ${s8SelectControl("s8MacroRisk", "Macro Risk", ["All", "Clear", "Moderate", "High", "Unavailable"], scanner.filters.macroRisk)}
+	      ${s8SelectControl("s8NewsRisk", "News Risk", ["All", "Clear", "Moderate", "High", "Unavailable"], scanner.filters.newsRisk)}
+	      ${s8SelectControl("s8Alignment", "Alignment", ["All", "Fully Aligned", "Partially Aligned", "Conflicting", "Awaiting Data"], scanner.filters.alignment)}
+	      <div class="s8-filter-actions"><button id="applyS8Filters" type="button">Apply Filters</button><button id="resetS8Filters" type="button">Reset Filters</button></div>
+	    </div>
+	  </details>
+	  <section class="s8-summary" aria-label="Opportunity summary">
+	    <article><span>High Setup Quality</span><strong>${summary.High}</strong><small>Score ${scanner.settings.highThreshold}–100</small></article>
+	    <article><span>Medium Setup Quality</span><strong>${summary.Medium}</strong><small>Score ${scanner.settings.mediumThreshold}–${scanner.settings.highThreshold - 1}</small></article>
+	    <article><span>Low Setup Quality</span><strong>${summary.Low}</strong><small>Score 1–${scanner.settings.mediumThreshold - 1}</small></article>
+	    <article><span>Watchlist Matches</span><strong>Unavailable</strong><small>Watchlist integration unavailable</small></article>
+	    <article><span>Overall Market Bias</span><strong>${scanner.marketOverview?.overallBias || summary.overallBias}</strong><small>Weighted valid scan results</small></article>
+	    <article><span>Valid / Rejected</span><strong>${scanner.validSetups} / ${scanner.rejectedSetups}</strong><small>${scanner.marketsRequested} requested markets</small></article>
+	  </section>
+	  ${filtered.length ? `
+	  <section class="s8-primary-grid">
+	    <article class="s8-panel s8-top-opportunities"><div class="s8-section-head"><div><span>DETERMINISTIC RANKING</span><h2>Top Opportunities</h2></div><small>Opportunity Score is setup quality, not win rate.</small></div><div class="s8-table-head"><span>#</span><span>Asset</span><span>Setup</span><span>Score</span><span>Bias / Risk</span><span>RR / Confirmation</span><span>Quality</span></div><div class="s8-opportunity-list">${filtered.map((item, index) => s8OpportunityRow(item, index + 1)).join("")}</div></article>
+	    <div class="s8-overview-stack">
+	      <article class="s8-panel"><div class="s8-section-head"><div><span>JARVIS VIEW</span><h2>AI Market Overview</h2></div></div><ul class="s8-points">${overviewPoints.map((point) => `<li>${s8Escape(point)}</li>`).join("")}</ul></article>
+	      <article class="s8-panel s8-distribution"><div class="s8-section-head"><div><span>CURRENT RESULTS</span><h2>Opportunity Distribution</h2></div></div><div class="s8-donut" style="--high:${summary.scanned ? summary.High / summary.scanned * 100 : 0}%;--medium:${summary.scanned ? (summary.High + summary.Medium) / summary.scanned * 100 : 0}%"><strong>${summary.valid}</strong><small>Valid</small></div><ul><li><i class="high"></i>High <strong>${summary.High}</strong></li><li><i class="medium"></i>Medium <strong>${summary.Medium}</strong></li><li><i class="low"></i>Low <strong>${summary.Low}</strong></li><li><i class="rejected"></i>Rejected <strong>${summary.rejected}</strong></li></ul></article>
+	      <article class="s8-panel"><div class="s8-section-head"><div><span>EXECUTION WINDOW</span><h2>Best Time to Act</h2></div></div><strong class="s8-caution">Insufficient Data</strong><p class="s8-muted">Wait for verified market data, event timing and structure confirmation. No timing forecast is available.</p></article>
+	      <article class="s8-panel"><div class="s8-section-head"><div><span>SUPPORTED METRIC</span><h2>Most Active Markets</h2></div></div><div class="s8-active-markets">${filtered.slice(0, 4).map((item) => `<span><strong>${item.asset}</strong><small>${item.activeMetric}</small></span>`).join("")}</div></article>
+	    </div>
+	  </section>
+	  <section class="s8-analysis-grid">
+	    <article class="s8-panel s8-heatmap"><div class="s8-section-head"><div><span>CURRENT SCAN RESULTS</span><h2>Opportunity Heatmap</h2></div><small>Text labels accompany colour.</small></div><div class="s8-heatmap-grid">${["Forex", "Gold", "Crypto", "Stocks", "Indices", "Commodities"].map((category) => `<div><h3>${category}</h3>${filtered.filter((item) => item.category === category).map((item) => `<button type="button" data-s8-opportunity="${item.id}" class="band-${item.band.toLowerCase().replace(/\s+/g, "-")}"><span>${item.asset}</span><strong>${item.score}</strong><small>${item.band} · ${item.bias} · ${item.dataQuality}</small></button>`).join("") || `<p>No supported result</p>`}</div>`).join("")}</div></article>
+	    <div class="s8-preview-stack">
+	      <article class="s8-panel s8-setup-preview"><div class="s8-section-head"><div><span>SELECTED OPPORTUNITY</span><h2>AI Setup Preview</h2></div>${s8QualityBadge(selected.dataQuality)}</div><div class="s8-preview-title"><div><strong>${selected.asset}</strong><span>${selected.market} · ${selected.timeframe}</span></div>${s8StatusBadge(selected.band + " Setup Quality")}</div><div class="s8-preview-grid">
+	        <span>Setup Type<strong>${selected.setupType}</strong></span><span>Market Bias<strong>${selected.bias}</strong></span><span>Market Mode<strong>${selected.marketMode}</strong></span><span>Trend<strong>${selected.trend}</strong></span><span>Alignment<strong>${selected.alignment}</strong></span><span>Score<strong>${selected.score}/100</strong></span>
+	        <span>Entry Zone<strong>Exact level unavailable</strong></span><span>Stop Loss<strong>Exact level unavailable</strong></span><span>Take Profit 1–3<strong>Exact levels unavailable</strong></span><span>Risk / Reward<strong>Unavailable</strong></span><span>Invalidation<strong>Chart confirmation required</strong></span><span>Confirmation<strong>${selected.confirmation}</strong></span>
+	      </div><div class="s8-preview-note"><p><strong>Main Factor:</strong> ${selected.mainFactor}</p><p><strong>Main Risk:</strong> ${selected.mainRisk}</p><p><strong>Analysis Source:</strong> ${selected.analysisSource || "Deterministic Scanner"} · ${scanner.marketDataTimestamp || "Timestamp unavailable"}</p></div></article>
+	      <article class="s8-panel s8-score-breakdown"><div class="s8-section-head"><div><span>DOCUMENTED WEIGHTS</span><h2>Opportunity Score Breakdown</h2></div><strong>${selected.score}/100</strong></div>${s8ScoreLine("Trend Alignment", "trendAlignment", selected)}${s8ScoreLine("Market Structure", "marketStructure", selected)}${s8ScoreLine("Liquidity Context", "liquidityContext", selected)}${s8ScoreLine("Volatility Suitability", "volatilitySuitability", selected)}${s8ScoreLine("Setup Confirmation", "setupConfirmation", selected)}${s8ScoreLine("Risk / Reward Quality", "riskRewardQuality", selected)}${s8ScoreLine("Macro Risk", "macroRisk", selected)}${s8ScoreLine("News Risk", "newsRisk", selected)}<div class="s8-penalty"><strong>Data completeness: ${selected.dataCompleteness || selected.dataQuality}</strong><span>Missing: ${(selected.missingFactors || ["Risk/Reward", "Macro", "News"]).join(", ")}.</span><span>Penalties: RR 0/10, Macro 0/5, News 0/5${selected.dataQualityPenalty ? `, Data quality -${selected.dataQualityPenalty}` : ""}.</span><span>Hard rejection: ${selected.hardReject ? "Yes · " + selected.rejectionReason : "No"}</span></div></article>
+	      <article class="s8-panel s8-confirmation"><div class="s8-section-head"><div><span>SCANNER LOGIC</span><h2>Confirmation Checklist</h2></div></div><ul>${s8Checklist(selected)}</ul></article>
+	      <article class="s8-panel s8-risk-context"><div class="s8-section-head"><div><span>CAPITAL PROTECTION</span><h2>Risk Context</h2></div>${s8StatusBadge(selected.hardReject ? "Extreme" : "High")}</div><div class="s8-risk-grid"><span>Market Data Risk<strong>${selected.dataQuality === "Verified" ? "Low" : "High"}</strong></span><span>Structure Risk<strong>${selected.components.marketStructure >= 14 ? "Moderate" : "High"}</strong></span><span>Liquidity Risk<strong>${selected.components.liquidityContext >= 10 ? "Moderate" : "High"}</strong></span><span>Volatility Risk<strong>${selected.risk}</strong></span><span>Macro Risk<strong>Insufficient Data</strong></span><span>News Risk<strong>Insufficient Data</strong></span><span>Execution Risk<strong>High</strong></span><span>Overall Risk<strong>${selected.hardReject ? "Extreme" : "High"}</strong></span></div><p>Opportunity Score supports review; it is not a trading decision. Verify execution conditions, macro and news before acting.</p></article>
+	    </div>
+	  </section>` : `<section class="s8-empty"><strong>${scanner.scanState === "ready" ? "Run a scan to analyse supported markets." : "No opportunities match the selected criteria."}</strong><p>No fabricated opportunities were added. Try a wider filter or run a new scan.</p><div><button id="emptyResetS8Filters" type="button">Reset Filters</button><button id="lowerS8MinimumScore" type="button">Lower Minimum Score</button><button id="emptyRunS8Scan" type="button">Run New Scan</button></div></section>`}
+	  <section class="s8-control-grid">
+	    <details class="s8-panel s8-custom-scan"><summary><span><strong>Custom Scan</strong><small>Create criteria using the same deterministic scanner model.</small></span><b>Configure</b></summary><div><label>Minimum Score<input id="s8CustomMinimumScore" type="number" min="0" max="100" value="${scanner.settings.mediumThreshold}"></label><label>Maximum Risk<select id="s8CustomMaximumRisk"><option>Moderate</option><option selected>High</option><option>Extreme</option></select></label><label><input id="s8CustomWatchlist" type="checkbox"> Watchlist only (unavailable)</label><button id="runS8CustomScan" type="button">Run Custom Scan</button><p class="s8-form-message">${scanner.message}</p></div></details>
+	    <details class="s8-panel s8-scan-settings"><summary><span><strong>Scan Settings</strong><small>Scanner-specific thresholds and data rules.</small></span><b>Settings</b></summary><div><label>High threshold<input id="s8HighThreshold" type="number" min="51" max="100" value="${scanner.settings.highThreshold}"></label><label>Medium threshold<input id="s8MediumThreshold" type="number" min="1" max="99" value="${scanner.settings.mediumThreshold}"></label><label>Freshness tolerance<select id="s8FreshnessTolerance"><option ${scanner.settings.freshnessTolerance === "15 minutes" ? "selected" : ""}>15 minutes</option><option ${scanner.settings.freshnessTolerance === "30 minutes" ? "selected" : ""}>30 minutes</option><option ${scanner.settings.freshnessTolerance === "60 minutes" ? "selected" : ""}>60 minutes</option></select></label><label><input id="s8IncludeMacro" type="checkbox" ${scanner.settings.includeMacro ? "checked" : ""}> Include macro filter</label><label><input id="s8IncludeNews" type="checkbox" ${scanner.settings.includeNews ? "checked" : ""}> Include news filter</label><button id="saveS8Settings" type="button">Save Settings</button></div></details>
+	    <details class="s8-panel s8-saved-scans"><summary><span><strong>Saved Scans</strong><small>Criteria only, never stale results.</small></span><b>${scanner.savedScans.length} Saved</b></summary><div class="s8-save-row"><input id="s8SaveName" maxlength="40" placeholder="Scan name" aria-label="Saved scan name"><button id="saveS8Scan" type="button">Save Current Scan</button></div>${s8SavedScansMarkup()}</details>
+	  </section>
+	  ${filtered.length ? `<section class="s8-handoff-grid"><article><div><span>ASK JARVIS ABOUT THIS OPPORTUNITY</span><h3>Discuss ${selected.asset} with honest context</h3><p>Carry the deterministic score, missing inputs, checklist and risk into the current conversation.</p></div><button id="askJarvisAboutS8" type="button">Ask JARVIS</button></article><article><div><span>OPEN IN AI ANALYSIS</span><h3>Continue deeper analysis</h3><p>Add Scanner context without overwriting verified AI Analysis information.</p></div><button id="openS8InAnalysis" type="button">Open in AI Analysis</button></article></section>` : ""}
+	</section>`;
 	}
 	function macroActiveTimezone() {
 		try {
@@ -4331,10 +4739,42 @@
 	}
 	function macroFilteredEvents() {
 		const filters = state.macroS6;
-		return sprint6MacroEvents.filter((event) => {
+		return filters.events.filter((event) => {
 			const dateMatch = filters.dateRange === "Custom Range" ? false : filters.dateRange === "Next Week" ? false : event.dateRange === filters.dateRange || filters.dateRange === "This Week" && ["Today", "Tomorrow", "This Week"].includes(event.dateRange);
 			return dateMatch && (filters.impact === "All" || event.impact === filters.impact) && (filters.currency === "All" || event.currency === filters.currency) && (filters.category === "All" || event.category === filters.category);
 		});
+	}
+	function macroDisplayValue(value, unit, fallback = "Unavailable") {
+		return value == null ? fallback : `${value}${unit || ""}${state.macroS6.dataStatus === "Demo" ? " (Demo)" : ""}`;
+	}
+	function macroTitleCase(value) {
+		return String(value || "Unavailable").replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+	}
+	function mapMacroApiEvent(event) {
+		const isUpcoming = event.releaseStatus === "upcoming";
+		const interpretation = event.interpretation || {};
+		return {
+			id: event.id,
+			dateRange: event.dateRange || "Today",
+			time: event.scheduledAt ? new Intl.DateTimeFormat("en-GB", { timeZone: macroActiveTimezone(), hour: "2-digit", minute: "2-digit" }).format(new Date(event.scheduledAt)) : "Timing unavailable",
+			currency: event.currency,
+			region: event.country || "Region unavailable",
+			impact: macroTitleCase(event.impact),
+			category: macroTitleCase(event.category),
+			name: event.title,
+			previous: macroDisplayValue(event.previous, event.unit),
+			forecast: macroDisplayValue(event.forecast, event.unit),
+			actual: macroDisplayValue(event.actual, event.unit, isUpcoming ? "Awaiting Release" : "Unavailable"),
+			revision: macroDisplayValue(event.revisedPrevious, event.unit),
+			status: macroTitleCase(event.releaseStatus),
+			quality: macroTitleCase(event.dataStatus),
+			explanation: event.dataStatus === "demo" ? "A sample macro event used only to demonstrate the Macro Intelligence workflow." : "Verified event detail supplied by the connected macro provider.",
+			whyMonitored: `${event.currency} ${macroTitleCase(event.category)} data may affect policy expectations and related markets; reaction still requires confirmation.`,
+			surprise: macroTitleCase(interpretation.surprise),
+			interpretation: interpretation.interpretation || "Interpretation unavailable",
+			assets: (event.affectedAssets || []).map((entry) => entry.asset),
+			raw: event
+		};
 	}
 	function macroSelectedEvent() {
 		const filtered = macroFilteredEvents();
@@ -4417,7 +4857,7 @@
 
 	  <section class="s6-calendar-module">
 		<div class="s6-section-head"><div><span>ECONOMIC CALENDAR</span><h2>Event Calendar</h2></div><div>${macroQualityTag("Demo")}<span>${events.length} matching record${events.length === 1 ? "" : "s"}</span></div></div>
-		${events.length ? `<div class="s6-calendar-head"><span>Time / Currency</span><span>Event</span><span>Impact</span><span>Previous</span><span>Forecast</span><span>Actual</span><span>Status</span><span>Quality</span></div><div class="s6-event-list">${events.map((event) => macroEventCard(event, selected?.id === event.id)).join("")}</div>` : `<div class="s6-empty"><strong>No macro events match the selected filters.</strong><p>${macro.dataStatus === "Not Connected" ? "Verified macro source not connected." : "Change the current filter combination."}</p><div><button type="button" id="emptyResetMacroFilters">Reset Filters</button><button type="button" id="changeMacroDateRange">Change Date Range</button></div></div>`}
+		${events.length ? `<div class="s6-calendar-head"><span>Time / Currency</span><span>Event</span><span>Impact</span><span>Previous</span><span>Forecast</span><span>Actual</span><span>Status</span><span>Quality</span></div><div class="s6-event-list">${events.map((event) => macroEventCard(event, selected?.id === event.id)).join("")}</div>` : `<div class="s6-empty"><strong>No macro events match the selected filters.</strong><p>${["Not Connected", "Demo"].includes(macro.dataStatus) ? "Verified macro source not connected." : "Change the current filter combination."}</p><div><button type="button" id="emptyResetMacroFilters">Reset Filters</button><button type="button" id="changeMacroDateRange">Change Date Range</button></div></div>`}
 	  </section>
 
 	  ${selected ? `<section class="s6-detail-grid">
@@ -4444,7 +4884,20 @@
 	}
 	function newsFilteredStories() {
 		const filters = state.newsS7;
-		return sprint7NewsStories.filter((story) => (filters.category === "All" || story.category === filters.category) && (filters.impact === "All Impact" || story.impact === filters.impact) && (filters.time === "Latest" ? story.period === "Latest" : false));
+		return filters.stories.filter((story) => (filters.category === "All" || story.category === filters.category) && (filters.impact === "All Impact" || story.impact === filters.impact) && (filters.time === "Latest" ? story.period === "Latest" : false));
+	}
+	function mapNewsApiArticle(article, topIds = [], breakingIds = []) {
+		const interpretation = article.interpretation || {};
+		return {
+			id: article.id, headline: article.headline, source: article.sourceName || "Source unavailable",
+			published: article.publishedAt ? new Intl.DateTimeFormat("en-GB", { timeZone: macroActiveTimezone(), dateStyle: "medium" }).format(new Date(article.publishedAt)) : "Published time unavailable",
+			category: macroTitleCase(article.category), impact: macroTitleCase(article.impact), verification: macroTitleCase(article.verificationStatus), period: "Latest",
+			topRank: topIds.indexOf(article.id) + 1, breaking: breakingIds.includes(article.id), summary: article.summary || "Summary unavailable",
+			entities: article.entities || [], assets: (article.affectedAssetContext || []).map((entry) => entry.asset), aiSummary: article.aiSummary || ["Summary unavailable"],
+			why: interpretation.whyItMatters || "Interpretation unavailable", implication: interpretation.potentialMechanism || "Interpretation unavailable",
+			uncertainty: interpretation.mainUncertainty || "Confirmation required", channel: interpretation.potentialMechanism || "Market sentiment",
+			relatedIds: (article.relatedNews || []).map((item) => item.id), raw: article
+		};
 	}
 	function newsSelectedStory() {
 		const filtered = newsFilteredStories();
@@ -4477,7 +4930,7 @@
 		const topStories = stories.filter((story) => story.topRank > 0).sort((a, b) => a.topRank - b.topRank);
 		const latestStories = stories.filter((story) => story.topRank === 0);
 		const breakingStories = stories.filter((story) => story.breaking && story.verification === "Verified");
-		const relatedStories = selected ? selected.relatedIds.map((id) => sprint7NewsStories.find((story) => story.id === id)).filter(Boolean) : [];
+		const relatedStories = selected ? selected.relatedIds.map((id) => news.stories.find((story) => story.id === id)).filter(Boolean) : [];
 		return `
     <section class="approved-workspace s7-news-page">
 	  <header class="s7-page-head">
@@ -4537,9 +4990,12 @@
   `;
 	}
 	function tradePlannerPageContent(brain) {
+		const plannerMarket = state.marketData.planner;
+		const quoteStatus = plannerMarket.quote ? `${plannerMarket.quote.provider} · ${plannerMarket.quote.dataStatus} · ${plannerMarket.quote.freshness}` : "Market Data Source Not Connected";
+		const metadataStatus = plannerMarket.metadata?.contractMetadataStatus === "verified" ? "Verified" : "Contract specifications unavailable";
 		return `
-    <section class="approved-workspace">
-      <div class="approved-page-head"><div><h1>Trade Planner</h1><p>Plan before execution</p></div></div>
+	<section class="approved-workspace">
+	  <div class="approved-page-head"><div><h1>Trade Planner</h1><p>Plan before execution · ${quoteStatus}</p></div></div>
       <section class="planner-layout">
         <article class="planner-form card">
           <h3>Plan Inputs</h3>
@@ -4556,10 +5012,11 @@
         </article>
         <aside class="planner-result card">
           <h3>Results</h3>
-          <div class="metric-line"><span>Lot / Position Size</span><b>Contract specs required</b></div>
-          <div class="metric-line"><span>Risk Amount</span><b>100.00 USD</b></div>
-          <div class="metric-line"><span>Potential Profit</span><b>214.50 USD</b></div>
-          <div class="metric-line"><span>RR</span><b>1 : 2.14</b></div>
+		  <div class="metric-line"><span>Lot / Position Size</span><b>Position size unavailable — verified symbol specification required.</b></div>
+		  <div class="metric-line"><span>Symbol Metadata</span><b>${metadataStatus}</b></div>
+		  <div class="metric-line"><span>Risk Amount</span><b>Awaiting valid plan inputs</b></div>
+		  <div class="metric-line"><span>Potential Profit</span><b>Awaiting valid plan inputs</b></div>
+		  <div class="metric-line"><span>RR</span><b>Awaiting valid plan inputs</b></div>
           <div class="metric-line"><span>Plan Quality</span><b>Waiting confirmation</b></div>
           <p>JARVIS View: The plan is usable only if entry is near the planned zone and invalidation remains clear.</p>
         </aside>
@@ -4686,6 +5143,16 @@
 		});
 		page.querySelector("#refreshAiAnalysis")?.addEventListener("click", runAiAnalysisRefresh);
 		page.querySelector("#retryAiAnalysis")?.addEventListener("click", runAiAnalysisRefresh);
+		if (page.querySelector(".ai-analysis-page") && !state.marketData.analysis.loaded && !state.marketData.analysis.loading) {
+			window.setTimeout(() => {
+				if (state.activePage === "AIAnalysis" && !state.marketData.analysis.loaded && !state.marketData.analysis.loading) runAiAnalysisRefresh();
+			}, 0);
+		}
+		if (page.querySelector(".planner-layout") && !state.marketData.planner.loaded && !state.marketData.planner.loading) {
+			window.setTimeout(() => {
+				if (state.activePage === "TradePlanner" && !state.marketData.planner.loaded && !state.marketData.planner.loading) loadTradePlannerMarketData();
+			}, 0);
+		}
 		page.querySelector("#askJarvisAboutAnalysis")?.addEventListener("click", async () => {
 			const asset = state.approvedUi.analysisAsset;
 			const timeframe = state.approvedUi.analysisTimeframe;
@@ -4703,8 +5170,14 @@
 		});
 		bindMacroIntelligenceActions(page);
 		bindNewsEventsActions(page);
+		bindOpportunityScannerActions(page);
 	}
 	function bindMacroIntelligenceActions(page) {
+		if (!state.macroS6.loaded && !state.macroS6.isRefreshing && !state.macroS6.error) {
+			queueMicrotask(() => {
+				if (state.activePage === "Macro" && !state.macroS6.loaded && !state.macroS6.isRefreshing) runMacroRefresh({ animate: false });
+			});
+		}
 		const controls = [
 			["#macroDateRange", "dateRange"],
 			["#macroImpact", "impact"],
@@ -4734,7 +5207,7 @@
 			state.macroS6.impact = "All";
 			state.macroS6.currency = "All";
 			state.macroS6.category = "All";
-			state.macroS6.selectedEventId = sprint6MacroEvents[0].id;
+			state.macroS6.selectedEventId = state.macroS6.events[0]?.id || "";
 			render();
 		});
 		page.querySelectorAll("[data-macro-event]").forEach((button) => {
@@ -4791,22 +5264,43 @@
 			renderFromTop();
 		});
 	}
-	async function runMacroRefresh() {
+	async function runMacroRefresh({ animate = true } = {}) {
 		if (state.macroS6.isRefreshing) return;
 		state.macroS6.isRefreshing = true;
 		state.macroS6.refreshStep = 0;
 		state.macroS6.error = false;
-		await render();
-		for (let index = 0; index < 5; index += 1) {
-			await new Promise((resolve) => setTimeout(resolve, 180));
-			state.macroS6.refreshStep = index;
+		if (animate) await render();
+		try {
+			const [statusPayload, eventsPayload, summaryPayload] = await Promise.all([macroDataClient.status(), macroDataClient.events(), macroDataClient.summary()]);
+			if (animate) for (let index = 0; index < 5; index += 1) {
+				await new Promise((resolve) => setTimeout(resolve, 90));
+				state.macroS6.refreshStep = index;
+				await render();
+			}
+			state.macroS6.events = (eventsPayload.data?.events || []).map(mapMacroApiEvent);
+			state.macroS6.provider = statusPayload.data?.provider || null;
+			state.macroS6.summary = summaryPayload.data || null;
+			state.macroS6.dataStatus = statusPayload.data?.dataStatus === "demo" ? "Demo" : macroTitleCase(statusPayload.data?.dataStatus);
+			state.macroS6.selectedEventId = state.macroS6.events.some((event) => event.id === state.macroS6.selectedEventId) ? state.macroS6.selectedEventId : state.macroS6.events[0]?.id || "";
+			state.macroS6.loaded = true;
+			state.marketData.planner.macroRisk = summaryPayload.data?.integrations?.tradePlanner?.XAUUSD || { status: "Unavailable", nextEvent: null, sourceStatus: "Unavailable" };
+			state.macroS6.error = false;
+		} catch (error) {
+			if (animate) await new Promise((resolve) => setTimeout(resolve, 600));
+			state.macroS6.events = sprint6MacroEvents.map((event) => ({ ...event }));
+			state.macroS6.provider = "MockMacroProvider";
+			state.macroS6.dataStatus = "Demo";
+			state.macroS6.loaded = true;
+			state.macroS6.error = false;
+		} finally {
+			state.macroS6.isRefreshing = false;
 			await render();
 		}
-		state.macroS6.isRefreshing = false;
-		state.macroS6.dataStatus = "Not Connected";
-		await render();
 	}
 	function bindNewsEventsActions(page) {
+		if (!state.newsS7.loaded && !state.newsS7.isRefreshing && !state.newsS7.error) queueMicrotask(() => {
+			if (state.activePage === "Calendar" && !state.newsS7.loaded && !state.newsS7.isRefreshing) runNewsRefresh({ animate: false });
+		});
 		page.querySelectorAll("[data-news-category]").forEach((button) => {
 			button.addEventListener("click", () => {
 				state.newsS7.category = button.dataset.newsCategory;
@@ -4836,7 +5330,7 @@
 		page.querySelector("#changeNewsCategory")?.addEventListener("click", () => {
 			state.newsS7.category = "All";
 			state.newsS7.time = "Latest";
-			state.newsS7.selectedStoryId = sprint7NewsStories[0].id;
+			state.newsS7.selectedStoryId = state.newsS7.stories[0]?.id || "";
 			render();
 		});
 		page.querySelectorAll("[data-news-story]").forEach((button) => {
@@ -4895,34 +5389,304 @@
 			renderFromTop();
 		});
 	}
-	async function runNewsRefresh() {
+	async function runNewsRefresh({ animate = true } = {}) {
 		if (state.newsS7.isRefreshing) return;
 		state.newsS7.isRefreshing = true;
 		state.newsS7.refreshStep = 0;
 		state.newsS7.error = false;
+		if (animate) await render();
+		try {
+			const [statusPayload, articlesPayload, topPayload, breakingPayload, summaryPayload] = await Promise.all([newsDataClient.status(), newsDataClient.articles(), newsDataClient.topStories(), newsDataClient.breaking(), newsDataClient.summary()]);
+			if (animate) for (let index = 0; index < 5; index += 1) { await new Promise((resolve) => setTimeout(resolve, 90)); state.newsS7.refreshStep = index; await render(); }
+			const topIds = (topPayload.data?.articles || []).map((article) => article.id); const breakingIds = (breakingPayload.data?.articles || []).map((article) => article.id);
+			state.newsS7.stories = (articlesPayload.data?.articles || []).map((article) => mapNewsApiArticle(article, topIds, breakingIds));
+			state.newsS7.provider = statusPayload.data?.provider || null; state.newsS7.summary = summaryPayload.data || null;
+			state.newsS7.dataStatus = statusPayload.data?.dataStatus === "demo" ? "Demo" : macroTitleCase(statusPayload.data?.dataStatus);
+			state.newsS7.selectedStoryId = state.newsS7.stories.some((story) => story.id === state.newsS7.selectedStoryId) ? state.newsS7.selectedStoryId : state.newsS7.stories[0]?.id || "";
+			state.newsS7.loaded = true; state.newsS7.error = false;
+			state.marketData.planner.newsRisk = summaryPayload.data?.integrations?.tradePlanner?.XAUUSD || { status: "Source Unavailable", highestImpactStory: null, sourceStatus: "Unavailable" };
+		} catch (error) {
+			state.newsS7.stories = sprint7NewsStories.map((story) => ({ ...story })); state.newsS7.provider = "MockNewsDataProvider"; state.newsS7.dataStatus = "Demo"; state.newsS7.loaded = true; state.newsS7.error = false;
+		} finally { state.newsS7.isRefreshing = false; await render(); }
+	}
+	function resetS8Filters() {
+		state.scannerS8.category = "All Markets";
+		state.scannerS8.filters = {
+			asset: "All Supported Assets", timeframe: "All", bias: "All", band: "All",
+			setupType: "All", risk: "All", minimumRR: "Any", macroRisk: "All",
+			newsRisk: "All", alignment: "All"
+		};
+		state.scannerS8.selectedOpportunityId = state.scannerS8.results[0]?.id || "";
+		state.scannerS8.message = "";
+	}
+	function persistS8SavedScans() {
+		localStorage.setItem("jarvis-s8-saved-scans", JSON.stringify(state.scannerS8.savedScans));
+	}
+	function bindOpportunityScannerActions(page) {
+		if (!page.querySelector(".s8-scanner-page")) return;
+		page.querySelectorAll("[data-s8-category]").forEach((button) => {
+			button.addEventListener("click", () => {
+				state.scannerS8.category = button.dataset.s8Category || "All Markets";
+				state.scannerS8.selectedOpportunityId = s8FilteredOpportunities()[0]?.id || state.scannerS8.selectedOpportunityId;
+				render();
+			});
+		});
+		const filterControls = {
+			s8Asset: "asset", s8Timeframe: "timeframe", s8Bias: "bias", s8Band: "band",
+			s8SetupType: "setupType", s8Risk: "risk", s8MinimumRR: "minimumRR",
+			s8MacroRisk: "macroRisk", s8NewsRisk: "newsRisk", s8Alignment: "alignment"
+		};
+		Object.entries(filterControls).forEach(([id, key]) => {
+			page.querySelector("#" + id)?.addEventListener("change", (event) => {
+				state.scannerS8.filters[key] = event.currentTarget.value;
+			});
+		});
+		page.querySelector("#applyS8Filters")?.addEventListener("click", () => {
+			state.scannerS8.selectedOpportunityId = s8FilteredOpportunities()[0]?.id || state.scannerS8.selectedOpportunityId;
+			render();
+		});
+		const resetAndRender = () => {
+			resetS8Filters();
+			render();
+		};
+		page.querySelector("#resetS8Filters")?.addEventListener("click", resetAndRender);
+		page.querySelector("#emptyResetS8Filters")?.addEventListener("click", resetAndRender);
+		page.querySelector("#lowerS8MinimumScore")?.addEventListener("click", resetAndRender);
+		page.querySelectorAll("[data-s8-opportunity]").forEach((button) => {
+			button.addEventListener("click", () => {
+				state.scannerS8.selectedOpportunityId = button.dataset.s8Opportunity;
+				render();
+			});
+		});
+		page.querySelector("#runS8Scan")?.addEventListener("click", runS8Scan);
+		page.querySelector("#emptyRunS8Scan")?.addEventListener("click", runS8Scan);
+		page.querySelector("#retryS8Scan")?.addEventListener("click", () => {
+			localStorage.removeItem("jarvis-s8-scan-error");
+			state.scannerS8.error = false;
+			runS8Scan();
+		});
+		page.querySelector("#runS8CustomScan")?.addEventListener("click", () => {
+			const minimumScore = Number(page.querySelector("#s8CustomMinimumScore")?.value);
+			const watchlistOnly = Boolean(page.querySelector("#s8CustomWatchlist")?.checked);
+			if (!Number.isFinite(minimumScore) || minimumScore < 0 || minimumScore > 100) {
+				state.scannerS8.message = "Minimum score must be between 0 and 100.";
+				render();
+				return;
+			}
+			if (watchlistOnly) {
+				state.scannerS8.message = "Watchlist integration unavailable. Custom scan was not started.";
+				render();
+				return;
+			}
+			state.scannerS8.settings.mediumThreshold = minimumScore;
+			state.scannerS8.message = "Custom criteria validated. Running the same deterministic demo scanner.";
+			runS8Scan();
+		});
+		page.querySelector("#saveS8Settings")?.addEventListener("click", () => {
+			const high = Number(page.querySelector("#s8HighThreshold")?.value);
+			const medium = Number(page.querySelector("#s8MediumThreshold")?.value);
+			if (!Number.isFinite(high) || !Number.isFinite(medium) || high <= medium || high > 100 || medium < 1) {
+				state.scannerS8.message = "High threshold must be above Medium and within 1–100.";
+				render();
+				return;
+			}
+			state.scannerS8.settings = {
+				...state.scannerS8.settings,
+				highThreshold: high,
+				mediumThreshold: medium,
+				freshnessTolerance: page.querySelector("#s8FreshnessTolerance")?.value || "15 minutes",
+				includeMacro: Boolean(page.querySelector("#s8IncludeMacro")?.checked),
+				includeNews: Boolean(page.querySelector("#s8IncludeNews")?.checked)
+			};
+			localStorage.setItem("jarvis-s8-settings", JSON.stringify(state.scannerS8.settings));
+			state.scannerS8.message = "Scanner settings saved.";
+			render();
+		});
+		page.querySelector("#saveS8Scan")?.addEventListener("click", () => {
+			const name = page.querySelector("#s8SaveName")?.value.trim();
+			if (!name) {
+				state.scannerS8.message = "Enter a name before saving scan criteria.";
+				render();
+				return;
+			}
+			state.scannerS8.savedScans = [{
+				id: "scan-" + Date.now(),
+				name: name.slice(0, 40),
+				category: state.scannerS8.category,
+				filters: { ...state.scannerS8.filters },
+				savedAt: new Date().toLocaleDateString(),
+				type: "Criteria Only"
+			}, ...state.scannerS8.savedScans].slice(0, 10);
+			persistS8SavedScans();
+			state.scannerS8.message = "Scan criteria saved. Results were not stored as current.";
+			render();
+		});
+		page.querySelectorAll("[data-s8-load-scan]").forEach((button) => button.addEventListener("click", () => {
+			const scan = state.scannerS8.savedScans.find((item) => item.id === button.dataset.s8LoadScan);
+			if (!scan) {
+				state.scannerS8.message = "The saved scan could not be loaded.";
+				render();
+				return;
+			}
+			state.scannerS8.category = scan.category;
+			state.scannerS8.filters = { ...scan.filters };
+			state.scannerS8.selectedOpportunityId = s8FilteredOpportunities()[0]?.id || "";
+			state.scannerS8.message = "Saved criteria loaded. Run a new scan before treating results as current.";
+			render();
+		}));
+		page.querySelectorAll("[data-s8-rename-scan]").forEach((button) => button.addEventListener("click", () => {
+			const scan = state.scannerS8.savedScans.find((item) => item.id === button.dataset.s8RenameScan);
+			if (!scan) return;
+			const name = window.prompt("Rename saved scan", scan.name)?.trim();
+			if (!name) return;
+			scan.name = name.slice(0, 40);
+			persistS8SavedScans();
+			render();
+		}));
+		page.querySelectorAll("[data-s8-delete-scan]").forEach((button) => button.addEventListener("click", () => {
+			const scan = state.scannerS8.savedScans.find((item) => item.id === button.dataset.s8DeleteScan);
+			if (!scan || !window.confirm("Delete saved scan criteria?")) return;
+			state.scannerS8.savedScans = state.scannerS8.savedScans.filter((item) => item.id !== scan.id);
+			persistS8SavedScans();
+			render();
+		}));
+		page.querySelector("#askJarvisAboutS8")?.addEventListener("click", async () => {
+			const opportunity = s8SelectedOpportunity();
+			state.jarvis.conversationState.scannerContext = {
+				asset: opportunity.asset, market: opportunity.market, timeframe: opportunity.timeframe,
+				setupType: opportunity.setupType, bias: opportunity.bias, opportunityScore: opportunity.score,
+				scoreBreakdown: { ...opportunity.components }, confirmation: opportunity.confirmation,
+				risk: opportunity.risk, summary: opportunity.mainFactor, dataQuality: opportunity.dataQuality
+			};
+			state.jarvis.conversationState.currentAsset = opportunity.asset;
+			state.jarvis.conversationState.timeframe = opportunity.timeframe;
+			state.jarvis.conversationState.missingInformation = ["Verified market data", "Exact levels and RR", "Verified macro risk", "Verified news risk"];
+			state.jarvis.topic = opportunity.asset;
+			state.jarvis.question = "Explain the " + opportunity.asset + " " + opportunity.timeframe + " deterministic scanner setup. Keep it preliminary and explain every missing input.";
+			state.activePage = "JARVIS";
+			await renderFromTop();
+			const input = document.querySelector(".ask-page #jarvisQuestion");
+			if (input) input.value = state.jarvis.question;
+		});
+		page.querySelector("#openS8InAnalysis")?.addEventListener("click", () => {
+			const opportunity = s8SelectedOpportunity();
+			state.approvedUi.analysisAsset = opportunity.asset;
+			state.approvedUi.analysisTimeframe = opportunity.timeframe;
+			state.approvedUi.opportunityContext = {
+				source: "Opportunity Scanner", setupType: opportunity.setupType,
+				score: opportunity.score, technicalContext: opportunity.mainFactor,
+				macroRisk: "Unavailable", newsRisk: "Unavailable",
+				confirmation: opportunity.confirmation, dataQuality: opportunity.dataQuality
+			};
+			state.activePage = "AIAnalysis";
+			renderFromTop();
+		});
+	}
+	async function runS8Scan() {
+		if (state.scannerS8.isScanning) return;
+		state.scannerS8.isScanning = true;
+		state.scannerS8.scanStep = 0;
+		state.scannerS8.error = false;
+		state.scannerS8.errorMessage = "";
+		state.marketData.scanner.loading = true;
 		await render();
-		for (let index = 0; index < 5; index += 1) {
-			await new Promise((resolve) => setTimeout(resolve, 180));
-			state.newsS7.refreshStep = index;
+		const stepTimer = setInterval(() => {
+			state.scannerS8.scanStep = Math.min(state.scannerS8.scanStep + 1, 7);
+			render();
+		}, 450);
+		try {
+			await loadMarketCatalog();
+			const supported = state.marketData.symbols.filter((item) => item.supported).map((item) => item.symbol);
+			const symbols = state.scannerS8.filters.asset === "All Supported Assets" ? supported : supported.filter((symbol) => symbol === state.scannerS8.filters.asset);
+			const payload = await scannerDataClient.run({
+				assets: symbols,
+				category: state.scannerS8.category,
+				minimumScore: 1,
+				includeM15: symbols.length === 1 && state.scannerS8.filters.timeframe === "M15"
+			});
+			const result = payload.data;
+			Object.assign(state.scannerS8, {
+				scanId: result.scanId,
+				scanState: result.status,
+				results: result.results || [],
+				marketsRequested: result.counters?.requested ?? 0,
+				marketsCompleted: result.counters?.completed ?? 0,
+				marketsPartial: result.counters?.partial ?? 0,
+				marketsUnavailable: result.counters?.unavailable ?? 0,
+				validSetups: result.counters?.validSetups ?? 0,
+				rejectedSetups: result.counters?.rejectedSetups ?? 0,
+				marketOverview: result.marketOverview || null,
+				distribution: result.distribution || null,
+				marketDataTimestamp: result.completedAt ? new Date(result.completedAt).toLocaleString() : "",
+				lastSuccessfulScan: result.completedAt ? new Date(result.completedAt).toLocaleString() : "No completed scan",
+				dataStatus: result.dataQuality || "Unavailable",
+				selectedOpportunityId: result.results?.[0]?.id || ""
+			});
+			state.marketData.scanner.loaded = true;
+			state.marketData.scanner.errorCode = "";
+		} catch (error) {
+			state.marketData.scanner.errorCode = error?.code || "MARKET_DATA_UNAVAILABLE";
+			state.scannerS8.error = true;
+			state.scannerS8.errorMessage = error?.message || "The opportunity scan could not be completed.";
+			state.scannerS8.scanState = "failed";
+		} finally {
+			clearInterval(stepTimer);
+			state.marketData.scanner.loading = false;
+			state.scannerS8.isScanning = false;
 			await render();
 		}
-		state.newsS7.isRefreshing = false;
-		state.newsS7.dataStatus = "Not Connected";
-		await render();
+	}
+	async function loadMarketCatalog() {
+		const [statusResult, symbolsResult] = await Promise.allSettled([marketDataClient.status(), marketDataClient.symbols()]);
+		if (statusResult.status === "fulfilled") state.marketData.status = statusResult.value.data;
+		if (symbolsResult.status === "fulfilled") state.marketData.symbols = symbolsResult.value.data.symbols || [];
 	}
 	async function runAiAnalysisRefresh() {
 		if (state.approvedUi.analysisStatus === "loading") return;
 		state.approvedUi.analysisStatus = "loading";
+		state.marketData.analysis.loading = true;
 		state.approvedUi.analysisError = false;
 		await render();
 		try {
-			await new Promise((resolve) => setTimeout(resolve, 700));
-			state.approvedUi.analysisLastUpdated = new Date().toISOString();
+			await loadMarketCatalog();
+			const asset = state.approvedUi.analysisAsset;
+			const timeframe = state.approvedUi.analysisTimeframe;
+			const [quoteResult, candlesResult] = await Promise.allSettled([
+				marketDataClient.quote(asset),
+				marketDataClient.candles(asset, timeframe, 300)
+			]);
+			state.marketData.analysis.quote = quoteResult.status === "fulfilled" ? quoteResult.value.data : null;
+			state.marketData.analysis.candles = candlesResult.status === "fulfilled" ? candlesResult.value.data : null;
+			state.marketData.analysis.errorCode = quoteResult.status === "rejected" ? quoteResult.reason?.code || "MARKET_DATA_UNAVAILABLE" : candlesResult.status === "rejected" ? candlesResult.reason?.code || "MARKET_DATA_UNAVAILABLE" : "";
+			state.approvedUi.analysisLastUpdated = state.marketData.analysis.quote?.timestamp || state.marketData.analysis.candles?.lastUpdated || "";
 		} catch (error) {
-			console.error("AI Analysis refresh failed", error);
-			state.approvedUi.analysisError = true;
+			state.marketData.analysis.errorCode = error?.code || "MARKET_DATA_UNAVAILABLE";
+			state.marketData.analysis.quote = null;
+			state.marketData.analysis.candles = null;
 		} finally {
+			state.marketData.analysis.loading = false;
+			state.marketData.analysis.loaded = true;
 			state.approvedUi.analysisStatus = "idle";
+			await render();
+		}
+	}
+	async function loadTradePlannerMarketData() {
+		if (state.marketData.planner.loading) return;
+		state.marketData.planner.loading = true;
+		try {
+			await loadMarketCatalog();
+			const metadata = state.marketData.symbols.find((item) => item.symbol === "XAUUSD") || null;
+			const quotePayload = await marketDataClient.quote("XAUUSD");
+			state.marketData.planner.metadata = metadata;
+			state.marketData.planner.quote = quotePayload.data;
+			state.marketData.planner.errorCode = "";
+		} catch (error) {
+			state.marketData.planner.quote = null;
+			state.marketData.planner.metadata = state.marketData.symbols.find((item) => item.symbol === "XAUUSD") || null;
+			state.marketData.planner.errorCode = error?.code || "MARKET_DATA_UNAVAILABLE";
+		} finally {
+			state.marketData.planner.loading = false;
+			state.marketData.planner.loaded = true;
 			await render();
 		}
 	}
@@ -4983,7 +5747,7 @@
 	function renderApprovedChatMessage(item) {
 		if (item.role === "user") return `<div class="approved-user-question"><p>${escapeHtml(item.text)}</p><span>${mockUser.name.slice(0, 1).toUpperCase()}</span></div>`;
 		if (item.thinking) return renderThinkingComponent(item);
-		const mentorIntro = item.responseModel ? mentorText("I've reviewed the context. Here's the structured market view.", "我已经检查了当前背景。以下是结构化市场观点。") : item.text;
+		const mentorIntro = item.text;
 		return `
     <div class="approved-ai-response ${item.attention ? "attention" : ""}">
       <div class="response-head">${lineIcon("spark")}<strong>JARVIS</strong></div>
@@ -5021,7 +5785,7 @@
       <header class="brief-header"><div><span>${labels.brief}</span><strong>${safe(model.instrument)}</strong></div><small>${labels.updated} ${safe(model.freshness)}</small></header>
       <div class="brief-overview-grid">
         <div><span>${labels.bias}</span><strong class="bias-${safe(model.bias).toLowerCase()}">${safe(displayBias)}</strong></div>
-        <div><span>${labels.confidence}</span><strong>${safe(model.confidence)}%</strong><small>${safe(model.confidenceLabel)}</small></div>
+		<div><span>${labels.confidence}</span><strong>${Number.isFinite(Number(model.confidence)) ? `${safe(model.confidence)}%` : safe(model.confidence)}</strong><small>${safe(model.confidenceLabel)}</small></div>
         <div><span>${labels.trend}</span><strong>${safe(displayTrend)}</strong></div>
       </div>
       <section class="brief-block"><h4>${labels.structure}</h4><ul class="structure-list">${list(model.structure)}</ul></section>
@@ -5120,14 +5884,15 @@
 		return `<div class="news-row"><span>${event.time}</span><div><strong>${event.event}</strong><small>Affected asset: USD / Gold / Indices</small></div>${statusBadge(event.risk)}</div>`;
 	}
 	function plannerDefault(label) {
+		const verifiedQuote = state.marketData.planner.quote?.dataStatus === "verified" && state.marketData.planner.quote?.freshness === "current" ? state.marketData.planner.quote.last : null;
 		return {
 			"Account Balance": "10000",
 			"Risk Percentage": "1",
-			"Entry Price": "2362.45",
-			"Stop Loss": "2352.00",
-			"Take Profit 1": "2375.00",
-			"Take Profit 2": "2388.00",
-			"Take Profit 3": "2410.00"
+			"Entry Price": verifiedQuote == null ? "" : String(verifiedQuote),
+			"Stop Loss": "",
+			"Take Profit 1": "",
+			"Take Profit 2": "",
+			"Take Profit 3": ""
 		}[label] || "";
 	}
 	function normalizeOpportunityName(direction) {

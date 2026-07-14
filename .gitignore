@@ -1,7 +1,12 @@
 node_modules/
 dist/
 .vite/
+.env
+.env.local
+.env.*.local
 npm-debug.log*
+.codex-vite.log
+.codex-vite-vision.log
 artifacts/
 test-results/
 playwright-report/

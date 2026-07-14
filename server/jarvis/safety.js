@@ -1,0 +1,6 @@
+const INJECTION = /ignore (all|previous)|system prompt|reveal.*prompt|api key|change permissions|enable tool|execute (this|order)|忽略.*指令|系统提示|密钥/i;
+const EXECUTION = /place order|execute trade|open position|close position|withdraw|deposit|下单|开仓|平仓|提款|入金/i;
+export function containsPromptInjection(value) { return INJECTION.test(String(value || "")); }
+export function containsProhibitedAction(value) { return EXECUTION.test(String(value || "")); }
+export function sanitizeToolOutput(value) { if (value == null) return value; if (typeof value === "string") return containsPromptInjection(value) ? "External content omitted because it contained instructions." : value.slice(0, 2000); if (Array.isArray(value)) return value.slice(0, 100).map(sanitizeToolOutput); if (typeof value === "object") return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, sanitizeToolOutput(item)])); return value; }
+export function calculateDataQuality(results) { const states = results.map((result) => result.meta?.dataStatus || "unavailable"); if (!states.length || states.every((state) => state === "unavailable")) return "unavailable"; if (states.some((state) => ["unavailable", "demo", "stale", "delayed"].includes(state))) return states.every((state) => state === "demo") ? "demo" : "partial"; return "verified"; }

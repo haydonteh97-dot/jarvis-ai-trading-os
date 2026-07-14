@@ -1,9 +1,19 @@
 {
   "scripts": {
-    "build": "vite build && node build-sites.mjs"
+    "build": "vite build && node build-sites.mjs",
+    "test:market": "node --test tests/market-data.test.mjs",
+    "test:scanner": "node --test tests/scanner-engine.test.mjs",
+    "test:macro": "node --test tests/macro-engine.test.mjs",
+    "test:news": "node --test tests/news-engine.test.mjs",
+    "test:jarvis": "node --test tests/jarvis-core.test.mjs",
+    "test:jarvis-openai": "node --test tests/jarvis-openai.test.mjs",
+    "test:vision": "node --test tests/vision-engine.test.mjs",
+    "test:vision-openai": "node --test tests/vision-openai.test.mjs",
+    "test:ui": "playwright test tests/ui-bible.spec.js"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
+    "openai": "^6.46.0",
     "react": "latest",
     "react-dom": "latest",
     "vite": "latest"

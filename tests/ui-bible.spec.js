@@ -151,6 +151,208 @@ test.describe('Sprint 4 AI Analysis', () => {
   }
 });
 
+async function openOpportunityScanner(page, mobile = false) {
+	await page.route('**/api/scanner/run', async (route) => {
+		await new Promise((resolve) => setTimeout(resolve, 550));
+		const components = { trendAlignment: 20, marketStructure: 17, liquidityContext: 10, volatilitySuitability: 9, setupConfirmation: 10, riskRewardQuality: 0, macroRisk: 0, newsRisk: 0 };
+		const makeResult = (asset, score, bias, setupType, alignment) => ({
+			id: asset + '-test-scan', asset, symbol: asset, market: asset === 'XAUUSD' ? 'Gold' : 'Euro / US Dollar', category: asset === 'XAUUSD' ? 'Gold' : 'Forex',
+			setupType, timeframe: 'H1', alignment, bias, risk: 'Moderate', macroRisk: 'Unavailable', newsRisk: 'Unavailable', marketMode: 'Pullback', trend: bias,
+			confirmation: 'Waiting Confirmation', components: { ...components, trendAlignment: asset === 'XAUUSD' ? 20 : 15 }, score, band: score >= 75 ? 'High' : 'Medium',
+			dataQuality: 'Verified', freshness: 'current', rr: 'Unavailable', hardReject: false, mainFactor: alignment + '; deterministic structure.',
+			mainRisk: 'RR, Macro and News inputs are unavailable.', activeMetric: 'Scanner Result', analysisSource: 'Test verified candles · Deterministic Scanner v1',
+			dataCompleteness: 'Verified', missingFactors: ['Risk/Reward', 'Macro', 'News', 'Execution levels'], dataQualityPenalty: 0,
+		});
+		const results = [makeResult('XAUUSD', 76, 'Bullish', 'Pullback', 'Fully Aligned'), makeResult('EURUSD', 61, 'Neutral', 'Range Break', 'Partially Aligned')];
+		await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, data: {
+			scanId: 'test-scan', status: 'completed', completedAt: '2026-07-14T00:00:00.000Z', dataQuality: 'Verified', results,
+			counters: { requested: 2, completed: 2, partial: 0, unavailable: 0, validSetups: 2, rejectedSetups: 0 },
+			marketOverview: { overallBias: 'Mixed', points: ['Dominant bias: Mixed.', 'Valid setups: 2; rejected setups: 0.', 'Macro and News risk sources are unavailable; both score 0/5.'] },
+			distribution: { high: 1, medium: 1, low: 0, rejected: 0, totalValid: 2 }
+		}, meta: {}, error: null }) });
+	});
+  if (mobile) await page.getByRole('button', { name: 'Open navigation' }).click();
+  await page.getByRole('button', { name: 'Opportunity Scanner' }).click();
+  await expect(page.locator('.s8-scanner-page')).toBeVisible();
+	await page.locator('#runS8Scan').click();
+	await expect(page.getByText('JARVIS is scanning supported markets...', { exact: true })).toBeHidden({ timeout: 5000 });
+}
+
+test.describe('Sprint 8 Opportunity Scanner', () => {
+  test('desktop hierarchy, deterministic ranking and honest partial data render', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await login(page);
+    await openOpportunityScanner(page);
+	await expect(page.locator('.s8-source-notice')).toContainText('Deterministic Scanner');
+	await expect(page.locator('.s8-scan-status')).toContainText('Completed');
+	await expect(page.locator('.s8-scan-status')).toContainText('Macro + News contribute 0 until connected');
+    await expect(page.locator('.s8-summary article')).toHaveCount(6);
+	await expect(page.locator('.s8-opportunity-row')).toHaveCount(2);
+    await expect(page.locator('.s8-opportunity-row').first()).toContainText('XAUUSD');
+	await expect(page.locator('.s8-opportunity-row').first()).toContainText('76/100');
+    await expect(page.locator('.s8-setup-preview')).toContainText('Exact level unavailable');
+    await expect(page.locator('.s8-score-breakdown')).toContainText('Penalties: RR 0/10, Macro 0/5, News 0/5');
+    await expect(page.locator('.s8-confirmation')).toContainText('Macro window clear');
+    await expect(page.locator('.s8-risk-context')).toContainText('Insufficient Data');
+    const layout = await page.evaluate(() => ({
+      width: document.documentElement.clientWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+      cardsFit: [...document.querySelectorAll('.s8-panel')].every((element) => element.getBoundingClientRect().right <= document.documentElement.clientWidth + 1),
+    }));
+    expect(layout.scrollWidth).toBeLessThanOrEqual(layout.width);
+    expect(layout.cardsFit).toBe(true);
+    await page.screenshot({ path: 'artifacts/scanner-desktop.png', fullPage: true });
+    await page.locator('.s8-scan-status').screenshot({ path: 'artifacts/scanner-status.png' });
+    await page.locator('.s8-summary').screenshot({ path: 'artifacts/scanner-summary.png' });
+    await page.locator('.s8-top-opportunities').screenshot({ path: 'artifacts/scanner-top-opportunities.png' });
+    await page.locator('.s8-heatmap').screenshot({ path: 'artifacts/scanner-heatmap.png' });
+    await page.locator('.s8-setup-preview').screenshot({ path: 'artifacts/scanner-setup-preview.png' });
+    await page.locator('.s8-score-breakdown').screenshot({ path: 'artifacts/scanner-score-breakdown.png' });
+    await page.locator('.s8-confirmation').screenshot({ path: 'artifacts/scanner-confirmation-checklist.png' });
+    await page.locator('.s8-risk-context').screenshot({ path: 'artifacts/scanner-risk-context.png' });
+    await page.locator('.s8-source-notice').screenshot({ path: 'artifacts/scanner-disconnected-source.png' });
+    await page.locator('.s8-scan-status').screenshot({ path: 'artifacts/scanner-partial-scan.png' });
+  });
+
+  test('advanced filters work and no-results state remains honest', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await login(page);
+    await openOpportunityScanner(page);
+    await page.locator('.s8-advanced summary').click();
+    await page.locator('.s8-advanced').screenshot({ path: 'artifacts/scanner-advanced-filters.png' });
+    await page.locator('#s8Asset').selectOption('EURUSD');
+	await page.locator('#s8Timeframe').selectOption('H1');
+    await page.locator('#s8Bias').selectOption('Neutral');
+    await page.locator('#s8Band').selectOption('Medium');
+    await page.locator('#s8SetupType').selectOption('Range Break');
+	await page.locator('#s8Risk').selectOption('Moderate');
+    await page.locator('#s8MacroRisk').selectOption('Unavailable');
+    await page.locator('#s8NewsRisk').selectOption('Unavailable');
+    await page.locator('#s8Alignment').selectOption('Partially Aligned');
+    await page.locator('#applyS8Filters').click();
+    await expect(page.locator('.s8-opportunity-row')).toHaveCount(1);
+    await expect(page.locator('.s8-opportunity-row')).toContainText('EURUSD');
+    await page.locator('.s8-advanced summary').click();
+    await page.locator('#s8MinimumRR').selectOption('1:1 or higher');
+    await page.locator('#applyS8Filters').click();
+    await expect(page.locator('.s8-empty')).toContainText('No opportunities match the selected criteria.');
+    await page.screenshot({ path: 'artifacts/scanner-no-results.png', fullPage: false });
+    await page.locator('#emptyResetS8Filters').click();
+	await expect(page.locator('.s8-opportunity-row')).toHaveCount(2);
+    await page.locator('[data-s8-category="Crypto"]').click();
+	await expect(page.locator('.s8-empty')).toContainText('No opportunities match the selected criteria.');
+  });
+
+  test('scan lifecycle prevents duplicates and preserves filters', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await login(page);
+    await openOpportunityScanner(page);
+    await page.locator('[data-s8-category="Gold"]').click();
+    await page.locator('#runS8Scan').click();
+    await expect(page.getByText('JARVIS is scanning supported markets...', { exact: true })).toBeVisible();
+    await expect(page.locator('#runS8Scan')).toBeDisabled();
+    await page.screenshot({ path: 'artifacts/scanner-loading.png', fullPage: false });
+    await expect(page.getByText('JARVIS is scanning supported markets...', { exact: true })).toBeHidden({ timeout: 4000 });
+    await expect(page.locator('[data-s8-category="Gold"]')).toHaveClass(/active/);
+    await expect(page.locator('.s8-opportunity-row')).toHaveCount(1);
+  });
+
+  test('custom scan, settings and saved scan criteria work', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await login(page);
+    await openOpportunityScanner(page);
+    await page.locator('.s8-custom-scan summary').click();
+    await page.locator('.s8-custom-scan').screenshot({ path: 'artifacts/scanner-custom-scan.png' });
+    await page.locator('#s8CustomWatchlist').check();
+    await page.locator('#runS8CustomScan').click();
+    await expect(page.locator('.s8-form-message').first()).toContainText('Watchlist integration unavailable');
+
+    await page.locator('.s8-scan-settings summary').click();
+    await page.locator('#s8HighThreshold').fill('80');
+    await page.locator('#s8MediumThreshold').fill('55');
+    await page.locator('#saveS8Settings').click();
+    await expect(page.locator('.s8-summary')).toContainText('Score 80–100');
+
+    await page.locator('.s8-saved-scans summary').click();
+    await page.locator('#s8SaveName').fill('Gold Review');
+    await page.locator('#saveS8Scan').click();
+    await page.locator('.s8-saved-scans summary').click();
+    await expect(page.locator('.s8-saved-list')).toContainText('Gold Review');
+    await page.locator('.s8-saved-scans').screenshot({ path: 'artifacts/scanner-saved-scans.png' });
+
+    await page.locator('[data-s8-category="Crypto"]').click();
+    await page.locator('.s8-saved-scans summary').click();
+    await page.locator('[data-s8-load-scan]').first().click();
+    await expect(page.locator('[data-s8-category="All Markets"]')).toHaveClass(/active/);
+
+    page.once('dialog', (dialog) => dialog.accept('Renamed Review'));
+    await page.locator('.s8-saved-scans summary').click();
+    await page.locator('[data-s8-rename-scan]').first().click();
+    await page.locator('.s8-saved-scans summary').click();
+    await expect(page.locator('.s8-saved-list')).toContainText('Renamed Review');
+
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.locator('[data-s8-delete-scan]').first().click();
+    await expect(page.locator('.s8-saved-list')).toHaveCount(0);
+  });
+
+  test('opportunity selection and both contextual handoffs work', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await login(page);
+    await openOpportunityScanner(page);
+	await page.locator('[data-s8-opportunity="EURUSD-test-scan"]').first().click();
+    await expect(page.locator('.s8-setup-preview')).toContainText('EURUSD');
+	await expect(page.locator('.s8-score-breakdown')).toContainText('61/100');
+    await page.locator('#askJarvisAboutS8').click();
+    await expect(page.locator('.ask-page')).toBeVisible();
+	await expect(page.locator('#jarvisQuestion')).toHaveValue(/EURUSD H1 deterministic scanner setup/);
+
+    await page.getByRole('button', { name: 'Opportunity Scanner' }).click();
+	await page.locator('[data-s8-opportunity="XAUUSD-test-scan"]').first().click();
+    await page.locator('#openS8InAnalysis').click();
+    await expect(page.locator('.ai-analysis-page')).toBeVisible();
+    await expect(page.locator('#analysisAssetSelect')).toHaveValue('XAUUSD');
+    await expect(page.locator('#analysisTimeframeSelect')).toHaveValue('H1');
+  });
+
+  test('scan failure and retry preserve scanner state', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await login(page);
+    await openOpportunityScanner(page);
+    await page.locator('[data-s8-category="Forex"]').click();
+	await page.unroute('**/api/scanner/run');
+	await page.route('**/api/scanner/run', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ success: false, data: null, meta: {}, error: { code: 'SCANNER_FAILED', message: 'Scanner data is temporarily unavailable.' } }) }));
+	await page.locator('#runS8Scan').click();
+    await expect(page.locator('.s8-error')).toContainText('could not be completed');
+    await page.screenshot({ path: 'artifacts/scanner-failure.png', fullPage: false });
+	await page.unroute('**/api/scanner/run');
+	await page.route('**/api/scanner/run', (route) => route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ success: false, data: null, meta: {}, error: { code: 'SCANNER_FAILED', message: 'Scanner data is temporarily unavailable.' } }) }));
+	await page.locator('#retryS8Scan').click();
+	await expect(page.getByText('JARVIS is scanning supported markets...', { exact: true })).toBeVisible();
+	await expect(page.getByText('JARVIS is scanning supported markets...', { exact: true })).toBeHidden({ timeout: 5000 });
+    await expect(page.locator('[data-s8-category="Forex"]')).toHaveClass(/active/);
+	await expect(page.locator('.s8-error')).toHaveCount(1);
+  });
+
+  for (const viewport of [{ width: 390, height: 844 }, { width: 430, height: 932 }]) {
+    test('mobile scanner stays inside viewport at ' + viewport.width + 'x' + viewport.height, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await login(page);
+      await openOpportunityScanner(page, true);
+	await expect(page.locator('.s8-opportunity-row')).toHaveCount(2);
+      await expect(page.locator('.s8-setup-preview')).toContainText('Exact level unavailable');
+      const mobile = await page.evaluate(() => ({
+        width: document.documentElement.clientWidth,
+        scrollWidth: document.documentElement.scrollWidth,
+        maxPanelWidth: Math.max(...[...document.querySelectorAll('.s8-panel, .s8-opportunity-row')].map((element) => element.getBoundingClientRect().width)),
+      }));
+      expect(mobile.scrollWidth).toBeLessThanOrEqual(mobile.width);
+      expect(mobile.maxPanelWidth).toBeLessThanOrEqual(mobile.width);
+      if (viewport.width === 390) await page.screenshot({ path: 'artifacts/scanner-mobile.png', fullPage: true });
+    });
+  }
+});
+
 async function openUploadChart(page, mobile = false) {
   if (mobile) await page.getByRole('button', { name: 'Open navigation' }).click();
   await page.getByRole('button', { name: 'Upload Chart' }).click();

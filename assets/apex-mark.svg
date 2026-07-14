@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180" viewBox="0 0 180 180" role="img" aria-label="APEX mark">
+  <rect width="180" height="180" rx="42" fill="#0C0C0B"/>
+  <path d="M90 28 145 139h-24l-12-25H71l-12 25H35L90 28Z" fill="#D8BE73"/>
+  <path d="M81 94h18L90 75l-9 19Z" fill="#0C0C0B"/>
+  <path d="M62 151h56" stroke="#F1E3B0" stroke-width="6" stroke-linecap="round"/>
+</svg>
