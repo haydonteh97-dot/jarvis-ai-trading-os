@@ -25,10 +25,15 @@ async function staticHandler(request) {
   return new Response(request.method === "HEAD" ? null : body, { status: 200, headers: { "content-type": definition[1], "cache-control": pathname === "/" || pathname === "/index.html" ? "no-cache" : "public, max-age=60" } });
 }
 
-const app = createPlatformApplication({ env: process.env, staticHandler });
+const runtimeEnv = {
+  ...process.env,
+  HOST: process.env.HOST || "0.0.0.0",
+  PORT: process.env.PORT || "10000",
+};
+const app = createPlatformApplication({ env: runtimeEnv, staticHandler });
 const server = createServer(async (incoming, outgoing) => {
   try {
-    const origin = `http://${incoming.headers.host || `127.0.0.1:${app.config.port}`}`;
+    const origin = `http://${incoming.headers.host || `${app.config.host}:${app.config.port}`}`;
     const url = new URL(incoming.url || "/", origin);
     const hasBody = !["GET", "HEAD"].includes(incoming.method || "GET");
     const request = new Request(url, { method: incoming.method, headers: incoming.headers, body: hasBody ? Readable.toWeb(incoming) : undefined, duplex: hasBody ? "half" : undefined });
