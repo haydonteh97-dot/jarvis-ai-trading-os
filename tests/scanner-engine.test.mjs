@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { ema, atr, adx, detectSwings } from "../server/scanner/indicators.js";
 import { analyseTimeframe, multiTimeframeAlignment } from "../server/scanner/analysis.js";
-import { qualityBand, scoreSymbol, SCORING_WEIGHTS } from "../server/scanner/scoring.js";
+import { buildDeterministicTradePlan, qualityBand, scoreSymbol, SCORING_WEIGHTS } from "../server/scanner/scoring.js";
 import { ScannerService } from "../server/scanner/service.js";
 import { handleScannerApiRequest } from "../server/scanner/router.js";
 
@@ -81,14 +81,29 @@ test("multi-timeframe alignment scores fully aligned, partial and conflict", () 
   assert.equal(multiTimeframeAlignment({ D1: { direction: "Bullish" }, H4: { direction: "Bearish" }, H1: { direction: "Neutral" } }).status, "Conflicting");
 });
 
-test("scoring weights total 100 and missing Macro, News and RR score zero", () => {
+test("scoring weights total 100 and verified structure can produce deterministic RR", () => {
   assert.equal(Object.values(SCORING_WEIGHTS).reduce((sum, value) => sum + value, 0), 100);
   const analysis = analyseTimeframe(candles(), "H1");
   const result = scoreSymbol({ symbol: "XAUUSD", metadata: metadata("XAUUSD"), analyses: { D1: analysis, H4: analysis, H1: analysis }, dataQuality: "Verified", freshness: "current", scanTimestamp: "2026-07-14T04:00:00.000Z" });
   assert.equal(result.components.macroRisk, 0);
   assert.equal(result.components.newsRisk, 0);
-  assert.equal(result.components.riskRewardQuality, 0);
+  assert.equal(result.components.riskRewardQuality, 10);
+  assert.equal(result.tradePlan.riskReward, "1:3");
   assert.ok(result.score <= 90);
+});
+
+test("deterministic trade plan uses ATR and confirmed swing without fabricating unsupported levels", () => {
+  const analysis = analyseTimeframe(candles(), "H1");
+  const plan = buildDeterministicTradePlan(analysis, { pricePrecision: 2 }, "Verified");
+  assert.ok(plan);
+  assert.ok(plan.entryZone.low < plan.entryZone.high);
+  assert.ok(plan.stopLoss < plan.entryReference);
+  assert.ok(plan.takeProfit1 > plan.entryReference);
+  assert.ok(plan.takeProfit2 > plan.takeProfit1);
+  assert.ok(plan.takeProfit3 > plan.takeProfit2);
+  assert.equal(plan.requiresConfirmation, true);
+  assert.equal(buildDeterministicTradePlan({ ...analysis, direction: "Neutral" }, {}, "Verified"), null);
+  assert.equal(buildDeterministicTradePlan(analysis, {}, "Demo"), null);
 });
 
 test("quality bands use 75 and 50 thresholds", () => {

@@ -42,6 +42,52 @@ function confirmationScore(analysis) {
   return 3;
 }
 
+function roundPrice(value, precision = 5) {
+  if (!Number.isFinite(value)) return null;
+  const factor = 10 ** Math.min(Math.max(Number(precision) || 5, 0), 8);
+  return Math.round(value * factor) / factor;
+}
+
+export function buildDeterministicTradePlan(analysis, metadata = {}, dataQuality = "Unavailable") {
+  if (!analysis?.sufficient || !["Bullish", "Bearish"].includes(analysis.direction)) return null;
+  if (!["Verified", "Delayed"].includes(dataQuality) || !Number.isFinite(analysis.atr) || analysis.atr <= 0) return null;
+
+  const bullish = analysis.direction === "Bullish";
+  const invalidationSwing = bullish ? analysis.swingLows?.at(-1)?.price : analysis.swingHighs?.at(-1)?.price;
+  if (!Number.isFinite(invalidationSwing) || !Number.isFinite(analysis.close)) return null;
+
+  const precision = metadata.pricePrecision ?? metadata.precision ?? 5;
+  const anchor = Number.isFinite(analysis.ema20) ? analysis.ema20 : analysis.close;
+  const entryCenter = bullish ? Math.min(analysis.close, anchor) : Math.max(analysis.close, anchor);
+  const entryHalfWidth = analysis.atr * 0.15;
+  const entryLow = entryCenter - entryHalfWidth;
+  const entryHigh = entryCenter + entryHalfWidth;
+  const stopLoss = bullish
+    ? Math.min(invalidationSwing - analysis.atr * 0.2, entryLow - analysis.atr * 0.5)
+    : Math.max(invalidationSwing + analysis.atr * 0.2, entryHigh + analysis.atr * 0.5);
+  const entryReference = bullish ? entryHigh : entryLow;
+  const risk = bullish ? entryReference - stopLoss : stopLoss - entryReference;
+  if (!Number.isFinite(risk) || risk <= 0) return null;
+
+  const target = (multiple) => bullish ? entryReference + risk * multiple : entryReference - risk * multiple;
+  return {
+    status: "preliminary",
+    method: "H1 ATR + confirmed swing invalidation",
+    entryZone: {
+      low: roundPrice(Math.min(entryLow, entryHigh), precision),
+      high: roundPrice(Math.max(entryLow, entryHigh), precision),
+    },
+    entryReference: roundPrice(entryReference, precision),
+    stopLoss: roundPrice(stopLoss, precision),
+    takeProfit1: roundPrice(target(1), precision),
+    takeProfit2: roundPrice(target(2), precision),
+    takeProfit3: roundPrice(target(3), precision),
+    riskReward: "1:3",
+    invalidation: bullish ? "H1 close below the stop-loss reference" : "H1 close above the stop-loss reference",
+    requiresConfirmation: true,
+  };
+}
+
 export function qualityBand(score, hardReject, { high = 75, medium = 50 } = {}) {
   if (hardReject || score <= 0) return "No Valid Setup";
   if (score >= high) return "High";
@@ -52,13 +98,14 @@ export function qualityBand(score, hardReject, { high = 75, medium = 50 } = {}) 
 export function scoreSymbol({ symbol, metadata, analyses, dataQuality, freshness, scanTimestamp, minimumScore = 1 }) {
   const selected = analyses.H1;
   const alignment = multiTimeframeAlignment(analyses);
+  const tradePlan = buildDeterministicTradePlan(selected, metadata, dataQuality);
   const components = {
     trendAlignment: alignment.score,
     marketStructure: structureScore(selected),
     liquidityContext: liquidityScore(selected),
     volatilitySuitability: volatilityScore(selected),
     setupConfirmation: confirmationScore(selected),
-    riskRewardQuality: 0,
+    riskRewardQuality: tradePlan ? 10 : 0,
     macroRisk: 0,
     newsRisk: 0,
   };
@@ -98,8 +145,8 @@ export function scoreSymbol({ symbol, metadata, analyses, dataQuality, freshness
     volatilityCondition: selected?.volatility || "Unavailable",
     setupConfirmation: confirmation,
     confirmation,
-    riskRewardStatus: "Unavailable",
-    rr: "Unavailable",
+    riskRewardStatus: tradePlan ? "Available · Preliminary" : "Unavailable",
+    rr: tradePlan?.riskReward || "Unavailable",
     opportunityScore: score,
     score,
     setupQualityBand: qualityBand(score, hardReject),
@@ -107,13 +154,21 @@ export function scoreSymbol({ symbol, metadata, analyses, dataQuality, freshness
     riskLevel: risk,
     risk,
     confirmationRequired: confirmation === "Confirmed" ? "Monitor structure follow-through" : "Wait for deterministic confirmation",
-    invalidationContext: "Exact level unavailable — chart confirmation required",
+    entryZone: tradePlan?.entryZone || null,
+    stopLoss: tradePlan?.stopLoss ?? null,
+    takeProfit1: tradePlan?.takeProfit1 ?? null,
+    takeProfit2: tradePlan?.takeProfit2 ?? null,
+    takeProfit3: tradePlan?.takeProfit3 ?? null,
+    tradePlan,
+    invalidationContext: tradePlan?.invalidation || "Exact level unavailable — chart confirmation required",
     mainFactor: hardReject ? rejectionReasons[0] : `${alignment.status}; ${selected.structure}; ${selected.setupType}.`,
-    mainRisk: "RR, Macro and News inputs are unavailable; technical score is capped at 90/100.",
+    mainRisk: tradePlan
+      ? "Levels are deterministic planning references from H1 candles, not executable signals. Macro and News confirmation remain required."
+      : "RR, Macro and News inputs are unavailable; technical score is capped at 90/100.",
 		dataQuality,
 		dataCompleteness: dataQuality,
 		dataQualityPenalty,
-		missingFactors: ["Risk/Reward", "Macro", "News", "Execution levels"],
+		missingFactors: [...(tradePlan ? [] : ["Risk/Reward", "Execution levels"]), "Macro", "News"],
     freshness,
     scanTimestamp,
 		source: "Twelve Data candles · Deterministic Scanner v1",
