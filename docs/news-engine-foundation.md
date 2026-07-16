@@ -1,18 +1,18 @@
 # News Intelligence Engine Foundation (API-004A)
 
-API-004A adds a provider-independent News Intelligence layer. No live or paid provider is connected.
+The News Intelligence layer supports provider-independent Demo mode and a server-side MarketAux live adapter.
 
 ## Configuration
 
 ```env
-NEWS_DATA_PROVIDER=
+NEWS_DATA_PROVIDER=marketaux
 NEWS_DATA_MODE=mock
 NEWS_DATA_API_KEY=
 NEWS_DATA_API_SECRET=
-NEWS_DATA_BASE_URL=
+NEWS_DATA_BASE_URL=https://api.marketaux.com/v1
 ```
 
-Mock mode returns fixed, non-current demonstration scenarios from `MockNewsDataProvider`. Live mode uses the placeholder `LiveNewsDataProvider` and returns `NEWS_DATA_NOT_CONFIGURED`; it never silently falls back to Demo.
+Mock mode returns fixed, non-current demonstration scenarios from `MockNewsDataProvider`. Live mode supports MarketAux when `NEWS_DATA_PROVIDER=marketaux` and a server-side `NEWS_DATA_API_KEY` is configured. MarketAux uses the token as an outbound query parameter; it is never returned to the frontend or logged. Live mode never silently falls back to Demo.
 
 ## Routes
 

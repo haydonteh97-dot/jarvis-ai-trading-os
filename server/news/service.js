@@ -1,14 +1,26 @@
 import { NewsCache } from "./cache.js";
 import { MockNewsDataProvider } from "./mock-provider.js";
 import { LiveNewsDataProvider } from "./provider.js";
+import { MarketAuxNewsProvider } from "./marketaux-provider.js";
 import { deduplicateArticles } from "./normalizers.js";
 import { clusterStories, buildTimeline, relatedNews } from "./clustering.js";
 import { classifyBreaking, rankTopStories } from "./ranking.js";
 import { mapAffectedAssets, templateSummary, templateInterpretation, buildMarketSentiment, newsRisk } from "./intelligence.js";
 import { aiAnalysisNewsContext, askJarvisNewsHandoff, scannerNewsRiskContext, tradePlannerNewsRisk } from "./integrations.js";
 const ASSETS = ["XAUUSD", "DXY", "EURUSD", "GBPUSD", "USDJPY", "US100", "US500", "BTCUSD", "ETHUSD", "WTI", "BRENT"];
+function createProvider(env, mode) {
+  if (mode === "mock") return new MockNewsDataProvider();
+  const providerName = String(env.NEWS_DATA_PROVIDER || "").toLowerCase();
+  if (mode === "live" && providerName === "marketaux") {
+    return new MarketAuxNewsProvider({
+      apiKey: env.NEWS_DATA_API_KEY,
+      baseUrl: env.NEWS_DATA_BASE_URL,
+    });
+  }
+  return new LiveNewsDataProvider({ providerName: env.NEWS_DATA_PROVIDER || null });
+}
 export class NewsEngine {
-  constructor({ env = {}, provider, cache = new NewsCache() } = {}) { this.env = env; this.mode = String(env.NEWS_DATA_MODE || "mock").toLowerCase(); this.provider = provider || (this.mode === "mock" ? new MockNewsDataProvider() : new LiveNewsDataProvider({ providerName: env.NEWS_DATA_PROVIDER || null })); this.cache = cache; }
+  constructor({ env = {}, provider, cache = new NewsCache() } = {}) { this.env = env; this.mode = String(env.NEWS_DATA_MODE || "mock").toLowerCase(); this.provider = provider || createProvider(env, this.mode); this.cache = cache; }
   getStatus() { return this.provider.getProviderStatus(); }
   enrich(article, allArticles = []) { return { ...article, aiSummary: templateSummary(article), interpretation: templateInterpretation(article), affectedAssetContext: mapAffectedAssets(article), sentimentContext: buildMarketSentiment(article), riskContext: newsRisk(article), timelineContext: buildTimeline(article, allArticles), relatedNews: relatedNews(article, allArticles), handoff: askJarvisNewsHandoff(article) }; }
   async getArticles(filters = {}) {
