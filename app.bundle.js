@@ -5433,6 +5433,9 @@
 	}
 	function bindOpportunityScannerActions(page) {
 		if (!page.querySelector(".s8-scanner-page")) return;
+		if (!state.scannerS8.results.length && state.scannerS8.scanState === "ready" && !state.scannerS8.isScanning && !state.scannerS8.error) {
+			queueMicrotask(() => runS8Scan());
+		}
 		page.querySelectorAll("[data-s8-category]").forEach((button) => {
 			button.addEventListener("click", () => {
 				state.scannerS8.category = button.dataset.s8Category || "All Markets";
