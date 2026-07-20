@@ -589,6 +589,69 @@ select, input, textarea { border-color: var(--st-line) !important; background: #
   .workspace-motto { display:none; }
 }
 
+@media (min-width: 901px) {
+  /* Stitch AI Analysis: chart master, alignment matrix, scenarios and conviction stack. */
+  .ai-analysis-page .market-overview-module { display: none !important; }
+  .ai-analysis-page .ai-analysis-grid {
+    grid-template-columns: minmax(0,1.72fr) minmax(260px,.72fr) !important;
+    grid-template-areas:
+      "structure mtf"
+      "bull bear"
+      "conclusion conclusion"
+      "liquidity macro"
+      "condition plan"
+      "risk risk"
+      "confirm ask" !important;
+    align-items: stretch !important;
+  }
+  .ai-analysis-page .structure-module { min-height: 330px !important; }
+  .ai-analysis-page .structure-empty-visual { min-height: 220px !important; background: #111312 !important; }
+  .ai-analysis-page .mtf-module { display: grid !important; align-content: start !important; }
+  .ai-analysis-page .mtf-grid { grid-template-columns: 1fr !important; }
+  .ai-analysis-page .mtf-grid > div { min-height: 46px !important; border-bottom: 1px solid #303432 !important; }
+  .ai-analysis-page .bullish-module,.ai-analysis-page .bearish-module { min-height: 190px !important; }
+  .ai-analysis-page .conclusion-module { min-height: 190px !important; border-left: 2px solid var(--stitch-cyan) !important; }
+
+  /* Stitch Ask JARVIS terminal proportions. */
+  .ask-page { max-width: 1160px !important; margin: 0 auto !important; padding-top: 30px !important; }
+  .ask-page-heading { padding-bottom: 16px !important; border-bottom: 1px solid #2d312f !important; }
+  .ask-page-heading h1 { margin: 0 !important; font-size: 18px !important; }
+  .ask-page-heading p { max-width: 680px; margin-top: 5px !important; font-size: 9px !important; }
+  .ask-page .ask-top-suggestions { justify-content: flex-start !important; padding: 12px 0 !important; }
+  .ask-page .approved-conversation { min-height: 560px !important; padding: 0 !important; background: transparent !important; border: 0 !important; }
+  .ask-page .chat-thread { max-width: 900px !important; margin-left: auto !important; min-height: 420px !important; }
+  .ask-page .approved-chat-input,.ask-page .chart-context-control { max-width: 920px !important; margin-left: auto !important; }
+}
+
+/* Stitch module surfaces: neutral obsidian, compact borders, semantic accent only. */
+.s5-module,.s6-module,.s6-calendar-module,.s6-risk-summary,.s6-data-status,
+.s7-panel,.s7-data-status,.s7-filter-bar,.s8-panel,.s8-scan-status,.s8-summary article,.s8-category-filters,.s8-advanced {
+  background: #181a19 !important;
+  border-color: #303432 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+.s5-module h2,.s6-module h2,.s6-calendar-module h2,.s7-panel h2,.s8-panel h2 { color: #f0f2f0 !important; }
+.s5-module p,.s6-module p,.s7-panel p,.s8-panel p { color: #a3aaa6 !important; }
+.s6-line,.s7-line,.s5-data-row,.analysis-data-row { border-bottom-color: #303432 !important; }
+.s6-filter-bar,.s7-filter-bar { background: #151716 !important; border-color: #303432 !important; }
+.s6-filter-bar select,.s7-filter-bar select,.s8-filter select { background: #202321 !important; border-color: #3b403d !important; }
+.s7-story-card,.s7-related button,.s8-opportunity-row { background: #1b1e1c !important; border-color: #333735 !important; }
+.s7-story-card:hover,.s7-story-card.is-selected,.s8-opportunity-row:hover,.s8-opportunity-row.is-selected { background: #252927 !important; border-color: #5e6964 !important; }
+.s7-story-card.is-selected,.s8-opportunity-row.is-selected { box-shadow: inset 2px 0 0 var(--stitch-cyan) !important; }
+.s6-page-head p,.s7-page-head p,.s8-page-head p { color: #a5aca8 !important; }
+.s6-head-actions button,.s7-head-actions button,.s8-head-actions button { background: #202321 !important; border-color: #3a403c !important; }
+.s6-quality,.s7-badge,.analysis-status { border-radius: 99px !important; background: transparent !important; }
+.positive,.status-verified,.verification-verified,.sentiment-bullish { color: var(--stitch-green) !important; }
+.negative,.sentiment-bearish { color: var(--stitch-red) !important; }
+
+@media (min-width: 901px) {
+  .s6-macro-page,.s7-news-page,.s8-scanner-page { padding-left: 0 !important; padding-right: 0 !important; }
+  .s6-filter-bar,.s7-filter-bar,.s8-category-filters { min-height: 44px !important; }
+  .s7-primary-grid { grid-template-columns: minmax(0,1.8fr) minmax(290px,.72fr) !important; }
+  .s8-primary-grid { grid-template-columns: minmax(300px,.7fr) minmax(0,1.7fr) !important; }
+}
+
 @media (max-width: 620px) {
   .page-stack { padding-inline:10px; }
   .approved-page-head h1,.s5-page-head h1,.s6-page-head h1,.s7-page-head h1,.s8-page-head h1 { font-size:26px; }

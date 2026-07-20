@@ -4227,8 +4227,7 @@
 		return `
     <section class="approved-workspace ask-page">
       <div class="approved-page-head ask-page-heading">
-        <img class="ask-apex-logo" src="./assets/apex-logo-official.jpg" alt="APEX" />
-        <div><h1>Ask JARVIS</h1><p>${isZh ? "您的 AI 交易助手" : "Your AI Trading Assistant"}</p></div>
+        <div><span class="stitch-page-kicker">ASK JARVIS</span><h1>Intelligence Terminal</h1><p>${isZh ? "JARVIS 系统在线，可进行跨资产分析、风险建模与交易策略优化。" : "JARVIS system online. Ready for complex cross-asset analysis, risk modeling, and trade strategy refinement."}</p></div>
       </div>
       <div class="suggested-actions ask-top-suggestions">${emptySuggestions.map((item) => `<button type="button" data-quick-prompt="${item}">${item}</button>`).join("")}</div>
       <section class="ask-layout ask-layout-single">
