@@ -1,0 +1,58 @@
+[
+  {
+    "title": "Vision Analysis - Chart Upload (Final)",
+    "screen_id": "3de5e8a39946466eb9bfa8c42a8841a6",
+    "folder": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\01-vision-analysis-chart-upload",
+    "html": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\01-vision-analysis-chart-upload\\screen.html",
+    "screenshot": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\01-vision-analysis-chart-upload\\screenshot.jpg"
+  },
+  {
+    "title": "Live Feed Hub - News (Final)",
+    "screen_id": "b7d53f9b4f914f6e88c805f3942d1ff7",
+    "folder": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\02-live-feed-hub-news",
+    "html": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\02-live-feed-hub-news\\screen.html",
+    "screenshot": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\02-live-feed-hub-news\\screenshot.jpg"
+  },
+  {
+    "title": "AI Analysis - Deep Dive (Final)",
+    "screen_id": "46a59aa90acd435b81db1583871d1c6c",
+    "folder": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\03-ai-analysis-deep-dive",
+    "html": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\03-ai-analysis-deep-dive\\screen.html",
+    "screenshot": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\03-ai-analysis-deep-dive\\screenshot.png"
+  },
+  {
+    "title": "Ask JARVIS - AI Intelligence Hub (Final)",
+    "screen_id": "012c51912d7b426f83bf99b8a2205f16",
+    "folder": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\04-ask-jarvis-ai-intelligence-hub",
+    "html": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\04-ask-jarvis-ai-intelligence-hub\\screen.html",
+    "screenshot": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\04-ask-jarvis-ai-intelligence-hub\\screenshot.png"
+  },
+  {
+    "title": "JARVIS Finder - Scanner (Final)",
+    "screen_id": "afc35e3ff9e8468fa7c3b59e0a7e2229",
+    "folder": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\05-jarvis-finder-scanner",
+    "html": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\05-jarvis-finder-scanner\\screen.html",
+    "screenshot": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\05-jarvis-finder-scanner\\screenshot.png"
+  },
+  {
+    "title": "Macro Intelligence - Risk Feed (Final)",
+    "screen_id": "e84935b96cf3491c9ce3fa23134af6f8",
+    "folder": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\06-macro-intelligence-risk-feed",
+    "html": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\06-macro-intelligence-risk-feed\\screen.html",
+    "screenshot": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\06-macro-intelligence-risk-feed\\screenshot.png"
+  },
+  {
+    "title": "Workspace - JARVIS OS (Final Definitive)",
+    "screen_id": "ee31d93eb99345dd8dbfd138c8b71bcc",
+    "folder": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\07-workspace-jarvis-os",
+    "html": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\07-workspace-jarvis-os\\screen.html",
+    "screenshot": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\07-workspace-jarvis-os\\screenshot.png"
+  },
+  {
+    "title": "Login - JARVIS AI (Immersive Background)",
+    "screen_id": "a9b0373b582b4fc1ab686d98bd48c1af",
+    "folder": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\08-login-jarvis-ai",
+    "html": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\08-login-jarvis-ai\\screen.html",
+    "screenshot": "C:\\Users\\USER\\AppData\\Local\\Temp\\stitch-export-prd-ui-design-generator\\08-login-jarvis-ai\\screenshot.png"
+  }
+]

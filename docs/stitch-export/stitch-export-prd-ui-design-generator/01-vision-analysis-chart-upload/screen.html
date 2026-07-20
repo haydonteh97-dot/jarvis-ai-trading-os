@@ -1,0 +1,421 @@
+<!DOCTYPE html><html class="dark" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Upload Chart - JARVIS OS</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Inter:wght@400;500&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-lowest": "#0e0e0e",
+                      "inverse-on-surface": "#313030",
+                      "sentiment-bullish": "#00FFA3",
+                      "on-error": "#690005",
+                      "on-tertiary": "#442b00",
+                      "primary-container": "#00d1ff",
+                      "on-secondary-fixed-variant": "#5700c9",
+                      "tertiary-container": "#feb127",
+                      "status-delayed": "#FFB800",
+                      "surface-tint": "#4cd6ff",
+                      "surface-container-high": "#2a2a2a",
+                      "surface-container": "#201f1f",
+                      "secondary-fixed-dim": "#d1bcff",
+                      "surface-container-low": "#1c1b1b",
+                      "tertiary": "#ffd59c",
+                      "on-secondary-container": "#ddcdff",
+                      "error": "#ffb4ab",
+                      "inverse-primary": "#00677f",
+                      "secondary-container": "#7000ff",
+                      "on-background": "#e5e2e1",
+                      "on-tertiary-container": "#6b4700",
+                      "outline": "#859399",
+                      "status-preliminary": "#00D1FF",
+                      "surface-glass": "rgba(255, 255, 255, 0.05)",
+                      "primary-fixed": "#b7eaff",
+                      "on-primary-fixed": "#001f28",
+                      "surface-variant": "#353534",
+                      "inverse-surface": "#e5e2e1",
+                      "on-tertiary-fixed-variant": "#624000",
+                      "on-error-container": "#ffdad6",
+                      "on-primary-fixed-variant": "#004e60",
+                      "primary": "#a4e6ff",
+                      "surface": "#131313",
+                      "surface-bright": "#3a3939",
+                      "secondary": "#d1bcff",
+                      "on-primary-container": "#00566a",
+                      "status-stale": "#FF3B3B",
+                      "on-secondary-fixed": "#23005b",
+                      "surface-container-highest": "#353534",
+                      "tertiary-fixed-dim": "#ffba49",
+                      "secondary-fixed": "#e9ddff",
+                      "error-container": "#93000a",
+                      "status-verified": "#00FFA3",
+                      "surface-dim": "#131313",
+                      "border-subtle": "rgba(255, 255, 255, 0.1)",
+                      "on-surface-variant": "#bbc9cf",
+                      "background": "#131313",
+                      "outline-variant": "#3c494e",
+                      "primary-fixed-dim": "#4cd6ff",
+                      "sentiment-bearish": "#FF3B3B",
+                      "on-surface": "#e5e2e1",
+                      "on-secondary": "#3c0090",
+                      "on-primary": "#003543",
+                      "on-tertiary-fixed": "#291800",
+                      "tertiary-fixed": "#ffddb1"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "gutter": "20px",
+                      "base": "4px",
+                      "xs": "8px",
+                      "md": "24px",
+                      "lg": "40px",
+                      "xl": "64px",
+                      "sm": "16px",
+                      "margin-mobile": "16px"
+              },
+              "fontFamily": {
+                      "display-lg": [
+                              "Hanken Grotesk"
+                      ],
+                      "caption-sm": [
+                              "Inter"
+                      ],
+                      "display-lg-mobile": [
+                              "Hanken Grotesk"
+                      ],
+                      "headline-md": [
+                              "Hanken Grotesk"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "data-mono": [
+                              "JetBrains Mono"
+                      ]
+              },
+              "fontSize": {
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "caption-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "display-lg-mobile": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "data-mono": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "500"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        body {
+            background-color: #050505; /* Obsidian Base */
+            color: #e5e2e1;
+            margin: 0;
+            overflow: hidden;
+        }
+        
+        .glass-panel {
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            border-left: 1px solid rgba(255, 255, 255, 0.05);
+            border-right: 1px solid rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .scanning-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #00d1ff, transparent);
+            box-shadow: 0 0 10px #00d1ff, 0 0 20px #00d1ff;
+            animation: scan 2s infinite linear;
+            z-index: 10;
+        }
+
+        @keyframes scan {
+            0% { top: 0%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        .grid-bg {
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        }
+        
+        .glow-text {
+            text-shadow: 0 0 10px rgba(0, 209, 255, 0.5);
+        }
+    </style>
+</head>
+<body class="flex h-screen font-body-md text-body-md selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar (Mobile Only) -->
+<nav class="md:hidden bg-surface-container dark:bg-surface-container border-b border-outline-variant bg-surface-container/80 backdrop-blur-xl shadow-sm flex justify-between items-center w-full px-md h-16 fixed top-0 z-50">
+<div class="flex items-center gap-xs">
+<span class="font-display-lg-mobile text-headline-md font-bold tracking-tighter text-primary">JARVIS OS</span>
+</div>
+<div class="flex items-center gap-sm text-primary dark:text-primary">
+<span class="material-symbols-outlined hover:text-primary transition-colors duration-200">notifications</span>
+<span class="material-symbols-outlined hover:text-primary transition-colors duration-200">settings</span>
+</div>
+</nav>
+<!-- SideNavBar (Desktop) -->
+<aside class="hidden md:flex flex-col h-full py-md px-sm overflow-y-auto bg-surface-container-lowest dark:bg-surface-container-lowest border-r border-outline-variant bg-surface-container-lowest/50 backdrop-blur-2xl w-64 flex-shrink-0 z-40">
+<div class="mb-xl px-xs">
+<h1 class="font-display-lg text-primary text-xl tracking-tighter">JARVIS OS</h1>
+<p class="font-caption-sm text-caption-sm text-on-surface-variant uppercase mt-1">Technocratic Trading</p>
+</div>
+<button class="mb-lg w-full py-sm px-md bg-primary text-on-primary font-bold rounded-lg hover:shadow-[0_0_15px_rgba(0,209,255,0.4)] transition-all duration-300 flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add</span>
+            New Trade Plan
+        </button>
+<nav class="flex-1 flex flex-col gap-xs font-body-md text-body-md">
+<a class="flex items-center gap-sm py-xs px-sm text-on-surface-variant hover:bg-surface-variant/50 rounded-lg hover:bg-surface-container-high transition-all duration-300 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Workspace
+            </a>
+<a class="flex items-center gap-sm py-xs px-sm text-on-surface-variant hover:bg-surface-variant/50 rounded-lg hover:bg-surface-container-high transition-all duration-300 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">smart_toy</span>
+                Ask JARVIS
+            </a>
+<a class="flex items-center gap-sm py-xs px-sm text-on-surface-variant hover:bg-surface-variant/50 rounded-lg hover:bg-surface-container-high transition-all duration-300 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">analytics</span>
+                AI Analysis
+            </a>
+<a class="flex items-center gap-sm py-xs px-sm text-on-surface-variant hover:bg-surface-variant/50 rounded-lg hover:bg-surface-container-high transition-all duration-300 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">travel_explore</span>
+                JARVIS Finder
+            </a>
+
+<a class="flex items-center gap-sm py-xs px-sm text-on-surface-variant hover:bg-surface-variant/50 rounded-lg hover:bg-surface-container-high transition-all duration-300 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">public</span>
+                Macro
+            </a>
+<a class="flex items-center gap-sm py-xs px-sm text-on-surface-variant hover:bg-surface-variant/50 rounded-lg hover:bg-surface-container-high transition-all duration-300 hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">newspaper</span>
+                News Feed
+            </a>
+<!-- Active State -->
+<a class="flex items-center gap-sm py-xs px-sm bg-primary-container text-on-primary-container rounded-lg font-bold scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">upload_file</span>
+                Upload Chart
+            </a>
+
+
+</nav>
+<div class="mt-auto pt-lg border-t border-border-subtle flex flex-col gap-xs font-body-md text-body-md text-on-surface-variant">
+<a class="flex items-center gap-sm py-xs px-sm hover:bg-surface-variant/50 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">help</span>
+                Support
+            </a>
+<a class="flex items-center gap-sm py-xs px-sm hover:bg-surface-variant/50 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Settings
+            </a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col h-full overflow-hidden relative grid-bg pt-16 md:pt-0">
+<!-- Top App Bar (Desktop Context) -->
+<header class="hidden md:flex items-center justify-between px-lg py-md z-30">
+<div class="flex items-center gap-sm text-on-surface-variant font-caption-sm text-caption-sm">
+<span class="material-symbols-outlined text-sm">home</span>
+<span class="">/</span>
+<span class="text-primary font-bold">Vision Analysis</span>
+</div>
+<div class="flex items-center gap-md">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="bg-surface-container-high border border-outline-variant rounded-full py-xs pl-xl pr-sm text-on-surface text-caption-sm font-caption-sm focus:outline-none focus:border-primary focus:shadow-[0_0_10px_rgba(0,209,255,0.2)] transition-all w-64 placeholder-outline" placeholder="Search Command..." type="text">
+</div>
+<span class="material-symbols-outlined text-outline hover:text-primary cursor-pointer transition-colors">notifications</span>
+<div class="w-8 h-8 rounded-full bg-surface-variant overflow-hidden border border-border-subtle">
+<img class="w-full h-full object-cover" data-alt="A macro close-up of a glowing fiber optic cable transmitting bright cyan light, abstract and technological, representing data flow in a high-fidelity dark mode interface. High contrast, sharp focus." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCZcnHHV_gSVzCdH9LD8umGxEmj60E_Shy69TL4Cf_L4zk3y-abvFX5Ryso0mlFZ420QLeIeRj1Dr2Dcx_aHcOfyvG5xSKWD4Kft9d0wYipZphShMJ69f1yUvXEwYoktQ9pEVYEHNRPcGOnN6Qs2XPJb8PnZpAtI6IB1zxTofU4rxVPjeIbXGtBtNKQPCOIIwdm_t7D5oMZSbGO3qHymCaNCSbQ_O86qyUxrMi0F_M1qOgWd_tSSHEoguJxWkPN-OhUFRsgO5C26Dg">
+</div>
+</div>
+</header>
+<!-- Content Area -->
+<div class="flex-1 flex flex-col lg:flex-row gap-gutter p-md lg:p-lg overflow-hidden h-full">
+<!-- Left Panel: Upload / Analysis Zone -->
+<div class="flex-1 flex flex-col glass-panel rounded-xl overflow-hidden relative border border-border-subtle min-h-[500px]">
+<!-- Status Header -->
+<div class="flex justify-between items-center px-md py-sm border-b border-border-subtle bg-surface-container-lowest/80 backdrop-blur-md z-20">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-status-preliminary animate-pulse">visibility</span>
+<h2 class="font-headline-md text-headline-md font-semibold glow-text text-primary">Vision Analysis Active</h2>
+</div>
+<div class="font-data-mono text-data-mono text-on-surface-variant flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-status-preliminary animate-ping"></span>
+                        Scanning Structure...
+                    </div>
+</div>
+<!-- Chart Area -->
+<div class="flex-1 relative overflow-hidden flex items-center justify-center bg-surface-container-lowest p-md">
+<!-- The Uploaded Chart Image -->
+<div class="w-full h-full relative rounded-lg overflow-hidden border border-border-subtle">
+<img class="w-full h-full object-cover opacity-60" data-alt="A highly detailed, professional candlestick trading chart displayed on a dark mode interface. The chart shows complex price action, volume bars, and intricate technical analysis overlays like Fibonacci retracements and moving averages. The aesthetic is sharp, precise, and technocratic, utilizing stark whites, deep blacks, and vibrant cyan and purple accents for data visualization." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGPvjk2HJrd8fODLia7dyy0xWQbg-ekiuxNvI8uVLTtfkAKhYNpMn6ians2-tMBXtA9AJwUncw4OTnwpwPWrzuTns-hbtU3wjRUkj_ZwOzisJeueO5BBU53JZdQLMH2Sa0xsElneiUSCWGlZMHtnZoSMorXH43RwUJSJ-6NdfsIsVsVHjI11elWtku013Cu1KIIsN_OFMwP83gQCo2rR4fhDh_mUoZxwpo3_dzh2E4acJPvgfLxf7JIwBpI71TMyJog4maRBdiOj4">
+<!-- Analysis Overlay Artifacts -->
+<div class="absolute inset-0 pointer-events-none">
+<div class="scanning-line"></div>
+<!-- Bounding Box Example -->
+<div class="absolute top-[20%] left-[30%] w-[15%] h-[40%] border-2 border-primary/50 bg-primary/10 rounded-sm">
+<span class="absolute -top-6 left-0 bg-primary/20 text-primary px-1 font-data-mono text-[10px] border border-primary/30 rounded-sm">FVG Det.</span>
+</div>
+<!-- Trend Line Example -->
+<svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+<line class="opacity-70" stroke="#00FFA3" stroke-dasharray="5,5" stroke-width="2" x1="10%" x2="90%" y1="80%" y2="20%"></line>
+</svg>
+</div>
+</div>
+</div>
+<!-- Footer Tools -->
+<div class="px-md py-sm border-t border-border-subtle bg-surface-container-highest flex justify-between items-center z-20">
+<div class="flex gap-sm">
+<button class="p-xs rounded bg-surface-variant hover:bg-surface-bright border border-border-subtle text-on-surface-variant hover:text-on-surface transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined text-sm">zoom_in</span>
+</button>
+<button class="p-xs rounded bg-surface-variant hover:bg-surface-bright border border-border-subtle text-on-surface-variant hover:text-on-surface transition-colors flex items-center justify-center">
+<span class="material-symbols-outlined text-sm">zoom_out</span>
+</button>
+</div>
+<button class="font-caption-sm text-caption-sm px-sm py-xs rounded border border-border-subtle text-on-surface hover:bg-surface-variant transition-colors">
+                        Re-Scan Image
+                    </button>
+</div>
+</div>
+<!-- Right Panel: Results & Context -->
+<div class="w-full lg:w-96 flex flex-col gap-md overflow-y-auto pr-xs pb-lg">
+<!-- Primary Insight Card -->
+<div class="glass-panel rounded-xl p-md flex flex-col gap-sm border border-border-subtle">
+<h3 class="font-headline-md text-body-lg font-semibold text-on-surface border-b border-border-subtle pb-xs">Vision Results</h3>
+<div class="flex justify-between items-end mt-xs">
+<span class="font-caption-sm text-caption-sm text-on-surface-variant uppercase tracking-wider">Primary Trend</span>
+<div class="flex items-center gap-xs text-sentiment-bullish bg-sentiment-bullish/10 px-2 py-1 rounded border border-sentiment-bullish/20">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">trending_up</span>
+<span class="font-data-mono text-data-mono font-bold">BULLISH</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface/80 mt-xs leading-relaxed">
+                        Structure exhibits clear HH/HL progression. Recent consolidation suggests accumulation phase near critical support level at <span class="font-data-mono text-primary">42,500</span>.
+                    </p>
+</div>
+<!-- Key Observations -->
+<div class="glass-panel rounded-xl p-md flex flex-col gap-sm border border-border-subtle">
+<h3 class="font-headline-md text-body-lg font-semibold text-on-surface border-b border-border-subtle pb-xs">Key Observations</h3>
+<ul class="flex flex-col gap-xs mt-xs font-body-md text-body-md">
+<li class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-status-preliminary mt-1">center_focus_strong</span>
+<div>
+<span class="text-on-surface font-medium">FVG Detected</span>
+<p class="text-on-surface-variant text-sm font-data-mono">H4 Imbalance @ 43.2k - 43.8k</p>
+</div>
+</li>
+<li class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-tertiary mt-1">warning</span>
+<div>
+<span class="text-on-surface font-medium">Liquidity Sweep</span>
+<p class="text-on-surface-variant text-sm font-data-mono">Previous Daily Low taken</p>
+</div>
+</li>
+<li class="flex items-start gap-sm">
+<span class="material-symbols-outlined text-sentiment-bullish mt-1">candlestick_chart</span>
+<div>
+<span class="text-on-surface font-medium">Bullish Divergence</span>
+<p class="text-on-surface-variant text-sm font-data-mono">RSI printing higher lows</p>
+</div>
+</li>
+</ul>
+</div>
+<!-- Context Validation -->
+<div class="glass-panel rounded-xl p-md flex flex-col gap-sm border border-border-subtle">
+<div class="flex justify-between items-center border-b border-border-subtle pb-xs">
+<h3 class="font-headline-md text-body-lg font-semibold text-on-surface">Context Validation</h3>
+<span class="material-symbols-outlined text-status-verified text-sm">verified</span>
+</div>
+<p class="font-caption-sm text-caption-sm text-outline mt-xs">Validating visual analysis against live orderbook and macro data.</p>
+<div class="grid grid-cols-2 gap-sm mt-sm">
+<div class="bg-surface-container-lowest p-sm rounded border border-border-subtle flex flex-col justify-center items-center">
+<span class="font-caption-sm text-caption-sm text-on-surface-variant">Orderbook Delta</span>
+<span class="font-data-mono text-data-mono text-sentiment-bullish mt-1">+45.2M</span>
+</div>
+<div class="bg-surface-container-lowest p-sm rounded border border-border-subtle flex flex-col justify-center items-center">
+<span class="font-caption-sm text-caption-sm text-on-surface-variant">Funding Rate</span>
+<span class="font-data-mono text-data-mono text-on-surface mt-1">0.01%</span>
+</div>
+</div>
+<button class="mt-sm w-full py-sm bg-surface-variant hover:bg-surface-bright text-on-surface font-body-md border border-border-subtle rounded transition-colors flex justify-center items-center gap-xs">
+                        Generate Trade Plan
+                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+
+</div></main></body></html>

@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>JARVIS OS | Final Workspace</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&amp;family=Hanken+Grotesk:wght@600;700;900&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#4cd6ff",
+                    "on-error-container": "#ffdad6",
+                    "primary-container": "#00d1ff",
+                    "inverse-primary": "#00677f",
+                    "on-tertiary-fixed": "#291800",
+                    "error": "#ffb4ab",
+                    "surface-dim": "#131313",
+                    "on-secondary-fixed": "#23005b",
+                    "surface-glass": "rgba(255, 255, 255, 0.05)",
+                    "surface-container": "#201f1f",
+                    "tertiary-container": "#feb127",
+                    "on-surface": "#e5e2e1",
+                    "on-background": "#e5e2e1",
+                    "primary-fixed": "#b7eaff",
+                    "surface-bright": "#3a3939",
+                    "secondary": "#d1bcff",
+                    "on-secondary-fixed-variant": "#5700c9",
+                    "on-surface-variant": "#bbc9cf",
+                    "on-tertiary-container": "#6b4700",
+                    "secondary-fixed-dim": "#d1bcff",
+                    "on-primary-fixed": "#001f28",
+                    "text-glow": "rgba(164, 230, 255, 0.4)",
+                    "sentiment-bearish": "#FF3B3B",
+                    "inverse-surface": "#e5e2e1",
+                    "on-error": "#690005",
+                    "surface-container-highest": "#353534",
+                    "secondary-container": "#7000ff",
+                    "outline-variant": "#3c494e",
+                    "on-tertiary": "#442b00",
+                    "on-primary": "#003543",
+                    "surface-container-high": "#2a2a2a",
+                    "on-secondary-container": "#ddcdff",
+                    "border-subtle": "rgba(255, 255, 255, 0.1)",
+                    "status-delayed": "#FFB800",
+                    "secondary-fixed": "#e9ddff",
+                    "background": "#050505",
+                    "primary": "#a4e6ff",
+                    "on-primary-container": "#00566a",
+                    "tertiary-fixed": "#ffddb1",
+                    "surface": "#050505",
+                    "surface-container-low": "#1c1b1b",
+                    "inverse-on-surface": "#313030",
+                    "tertiary-fixed-dim": "#ffba49",
+                    "on-primary-fixed-variant": "#004e60",
+                    "error-container": "#93000a",
+                    "sentiment-bullish": "#00FFA3",
+                    "surface-container-lowest": "#0e0e0e",
+                    "on-tertiary-fixed-variant": "#624000",
+                    "primary-fixed-dim": "#4cd6ff",
+                    "on-secondary": "#3c0090",
+                    "surface-variant": "#353534",
+                    "outline": "#859399",
+                    "tertiary": "#ffd59c"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "3xl": "1.5rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "20px",
+                    "margin-mobile": "16px",
+                    "xl": "64px",
+                    "xs": "8px",
+                    "lg": "40px",
+                    "md": "24px",
+                    "sm": "16px",
+                    "base": "4px"
+            },
+            "fontFamily": {
+                    "caption-sm": ["Inter"],
+                    "data-mono": ["JetBrains Mono"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "display-lg-mobile": ["Hanken Grotesk"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "display-lg": ["Hanken Grotesk"],
+                    "label-xs": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "caption-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "data-mono": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg-mobile": ["30px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-xs": ["10px", {"lineHeight": "12px", "letterSpacing": "0.1em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-panel:hover {
+            border-color: rgba(0, 209, 255, 0.3);
+        }
+        .ambient-glow-primary {
+            background: radial-gradient(circle, rgba(76, 214, 255, 0.08) 0%, rgba(5, 5, 5, 0) 70%);
+        }
+        .luminous-line {
+            box-shadow: 0 0 10px rgba(0, 255, 163, 0.4);
+        }
+        .scanline {
+            background: linear-gradient(to bottom, transparent 50%, rgba(0, 209, 255, 0.02) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+        .pulse-element {
+            position: relative;
+        }
+        .pulse-element::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 9999px;
+            border: 1px solid currentColor;
+            animation: pulse-ring 2s infinite;
+        }
+        body {
+            background-color: #050505;
+            color: #e5e2e1;
+            overflow-x: hidden;
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md selection:bg-primary/30 selection:text-primary">
+<!-- Global Layout Shell -->
+<div class="flex min-h-screen">
+<!-- SideNavBar (The Anchor) -->
+<aside class="fixed left-0 top-0 h-full w-64 border-r border-border-subtle bg-surface-container-lowest/30 backdrop-blur-3xl flex flex-col py-lg px-sm z-50">
+<div class="mb-lg px-xs">
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface tracking-tighter">JARVIS OS</h1>
+<p class="font-label-xs text-label-xs uppercase tracking-widest text-primary opacity-70">Institutional Grade</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-primary font-bold border-l-2 border-primary bg-primary/5 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-xs text-label-xs uppercase tracking-widest">Workspace</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined transition-transform group-active:scale-95" data-icon="psychology">psychology</span>
+<span class="font-label-xs text-label-xs uppercase tracking-widest">Ask JARVIS</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined transition-transform group-active:scale-95" data-icon="analytics">analytics</span>
+<span class="font-label-xs text-label-xs uppercase tracking-widest">AI Analysis</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined transition-transform group-active:scale-95" data-icon="search_insights">search_insights</span>
+<span class="font-label-xs text-label-xs uppercase tracking-widest">JARVIS Finder</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined transition-transform group-active:scale-95" data-icon="language">language</span>
+<span class="font-label-xs text-label-xs uppercase tracking-widest">Macro</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined transition-transform group-active:scale-95" data-icon="rss_feed">rss_feed</span>
+<span class="font-label-xs text-label-xs uppercase tracking-widest">News Feed</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-200 group" href="#">
+<span class="material-symbols-outlined transition-transform group-active:scale-95" data-icon="add_chart">add_chart</span>
+<span class="font-label-xs text-label-xs uppercase tracking-widest">Upload Chart</span>
+</a>
+</nav>
+<button class="mt-lg w-full py-3 rounded-full border border-primary/20 bg-primary/10 text-primary font-bold uppercase text-[10px] tracking-widest hover:bg-primary/20 transition-all flex items-center justify-center gap-2 mb-lg">
+<span class="material-symbols-outlined text-[16px]" data-icon="add">add</span>
+                New Trade Plan
+            </button>
+<div class="mt-auto pt-lg border-t border-white/5 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-xs text-label-xs uppercase tracking-widest">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-surface-variant hover:text-on-surface transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="help_center">help_center</span>
+<span class="font-label-xs text-label-xs uppercase tracking-widest">Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-64 p-lg relative min-h-screen">
+<!-- Scanline Effect Overlay -->
+<div class="fixed inset-0 scanline z-10 opacity-30 pointer-events-none"></div>
+<!-- TopNavBar -->
+<header class="flex items-center justify-between w-full h-16 px-xl mb-md bg-surface-dim/50 backdrop-blur-xl border-b border-border-subtle rounded-3xl">
+<div class="flex items-center gap-sm bg-white/5 rounded-full px-4 py-2 border border-white/5 focus-within:ring-1 focus-within:ring-primary/30 transition-all">
+<span class="material-symbols-outlined text-primary" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-64 placeholder:text-on-surface-variant" placeholder="Global Search (CMD+K)" type="text"/>
+<span class="text-[10px] font-bold bg-surface-container-highest px-2 py-0.5 rounded border border-white/10 text-on-surface-variant">⌘K</span>
+</div>
+<div class="flex items-center gap-lg">
+<div class="flex gap-md text-on-surface-variant">
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors" data-icon="sensors">sensors</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors" data-icon="speed">speed</span>
+</div>
+<div class="flex items-center gap-sm">
+<div class="text-right">
+<p class="text-xs font-bold text-on-surface">Admin_01</p>
+<p class="text-[10px] text-primary">System Secure</p>
+</div>
+<img class="w-10 h-10 rounded-full border-2 border-primary/20" data-alt="A high-tech digital portrait of a system administrator in a dark room, with glowing interfaces reflected in their eyes. The style is cinematic and cyberpunk-inspired, with deep blues and cyan lighting. The aesthetic is clean, professional, and sophisticated, matching the JARVIS OS design language." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnKdiO-omiR7Srwk--bWTsy03zIp-0cE3CNTKqKLohhIz5M3N_zqwwqChUHzn5ttewU2apUNsor6wLv9nKM1UfGk62IRCPG4bE5foibWDwrXmMHqlbMd9GenLn8c0yJsgjo3K3Lg5eQfnYOZD1Ch3xY6xjfYZ47zRCMKgdtznwVvr8o7N9qwLgY3a6ZK6zDPkIo_QsCo6HMCxRdPabe9R7EwHkSyO0uB4YlAmNtD84jp0OxDy_3YchybsdwfzVIHGT05dwL-zTB58"/>
+</div>
+</div>
+</header>
+<!-- Workspace Layout -->
+<div class="grid grid-cols-12 gap-gutter relative z-20">
+<!-- Left Content Cluster -->
+<div class="col-span-12 lg:col-span-9 space-y-gutter">
+<!-- Immersive Header -->
+<section class="glass-panel rounded-3xl p-lg relative overflow-hidden">
+<div class="absolute top-0 right-0 w-1/3 h-full ambient-glow-primary"></div>
+<div class="relative z-10">
+<h2 class="font-display-lg text-display-lg text-on-surface mb-xs">Good Morning, <span class="text-primary">Commander</span></h2>
+<div class="flex items-center gap-md">
+<div class="bg-sentiment-bullish/10 border border-sentiment-bullish/20 px-3 py-1 rounded-full flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-sentiment-bullish animate-pulse"></span>
+<span class="text-sentiment-bullish font-data-mono text-xs">MARKET BIAS: BULLISH</span>
+</div>
+<p class="text-on-surface-variant max-w-2xl font-body-md">
+                                    Global indices are showing resilience post-NY open. Bond yields are compressing, favoring a short-term rally in risk assets. XAUUSD liquidity pools are stacking at $2,185. Prepare for high-volatility execution.
+                                </p>
+</div>
+</div>
+</section>
+<!-- Global Liquidity Pulse Visualization -->
+<section class="glass-panel rounded-3xl p-lg h-[400px] flex flex-col relative">
+<div class="flex items-center justify-between mb-lg">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Global Liquidity Pulse</h3>
+<p class="font-label-xs text-label-xs text-on-surface-variant uppercase tracking-widest">Real-time market depth &amp; orderflow aggregate</p>
+</div>
+<div class="flex gap-sm">
+<div class="bg-surface-container px-3 py-1 rounded-md text-[10px] font-bold border border-white/5">1H</div>
+<div class="bg-primary/20 text-primary px-3 py-1 rounded-md text-[10px] font-bold border border-primary/30">REALTIME</div>
+</div>
+</div>
+<!-- Animated Wave Visualization Placeholder -->
+<div class="flex-1 w-full relative flex items-center justify-center overflow-hidden">
+
+<!-- Static Overlay HUD elements for depth -->
+<div class="absolute inset-0 flex flex-col justify-between py-xs pointer-events-none">
+<div class="w-full border-t border-white/5 flex justify-between px-xs opacity-50"><span class="text-[8px] font-data-mono text-primary">LIQ_HIGH: 485.2B</span><span class="text-[8px] font-data-mono">T+0</span></div>
+<div class="w-full border-t border-dashed border-primary/20 flex justify-between px-xs"><span class="text-[8px] font-data-mono text-primary-container">EQUILIBRIUM</span></div>
+<div class="w-full border-t border-white/5 flex justify-between px-xs opacity-50"><span class="text-[8px] font-data-mono text-sentiment-bearish">LIQ_LOW: 112.8B</span><span class="text-[8px] font-data-mono">T+6</span></div>
+</div>
+</div>
+</section>
+<!-- Prime Instrument Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Card: XAUUSD -->
+<div class="glass-panel rounded-3xl p-md flex flex-col group transition-all duration-500">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-2xl bg-tertiary-container/20 flex items-center justify-center border border-tertiary-container/30 text-tertiary-container">
+<span class="material-symbols-outlined text-[28px]" data-icon="currency_exchange">currency_exchange</span>
+</div>
+<div>
+<h4 class="text-on-surface font-headline-md">XAUUSD</h4>
+<p class="text-[10px] font-data-mono text-on-surface-variant uppercase tracking-widest">Spot Gold / US Dollar</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-headline-md font-bold text-on-surface font-data-mono">$2,174.45</p>
+<p class="text-xs text-sentiment-bullish font-bold">+1.24%</p>
+</div>
+</div>
+<!-- Small Sparkline Simulation -->
+<div class="h-20 mb-md relative overflow-hidden rounded-xl bg-white/5">
+
+</div>
+<div class="flex items-center justify-between border-t border-white/5 pt-md mt-auto">
+<div class="flex flex-col">
+<span class="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">AI Bias</span>
+<span class="text-sm font-bold text-sentiment-bullish uppercase">Strong Buy</span>
+</div>
+<div class="flex flex-col text-right">
+<span class="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">Confidence</span>
+<div class="flex items-center gap-1">
+<div class="w-16 h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-sentiment-bullish w-[88%] luminous-line"></div>
+</div>
+<span class="text-xs font-data-mono text-on-surface">88%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card: BTCUSD -->
+<div class="glass-panel rounded-3xl p-md flex flex-col group transition-all duration-500">
+<div class="flex justify-between items-start mb-md">
+<div class="flex items-center gap-md">
+<div class="w-12 h-12 rounded-2xl bg-primary-container/20 flex items-center justify-center border border-primary-container/30 text-primary-container">
+<span class="material-symbols-outlined text-[28px]" data-icon="currency_bitcoin">currency_bitcoin</span>
+</div>
+<div>
+<h4 class="text-on-surface font-headline-md">BTCUSD</h4>
+<p class="text-[10px] font-data-mono text-on-surface-variant uppercase tracking-widest">Bitcoin / US Dollar</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-headline-md font-bold text-on-surface font-data-mono">$72,140</p>
+<p class="text-xs text-on-surface-variant font-bold">Neutral</p>
+</div>
+</div>
+<!-- Small Sparkline Simulation -->
+<div class="h-20 mb-md relative overflow-hidden rounded-xl bg-white/5">
+
+</div>
+<div class="flex items-center justify-between border-t border-white/5 pt-md mt-auto">
+<div class="flex flex-col">
+<span class="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">AI Bias</span>
+<span class="text-sm font-bold text-on-surface-variant uppercase">Consolidating</span>
+</div>
+<div class="flex flex-col text-right">
+<span class="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">Confidence</span>
+<div class="flex items-center gap-1">
+<div class="w-16 h-1.5 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full bg-primary-container w-[42%] luminous-line"></div>
+</div>
+<span class="text-xs font-data-mono text-on-surface">42%</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Intelligence Stream -->
+<div class="col-span-12 lg:col-span-3 space-y-gutter">
+<section class="glass-panel rounded-3xl p-md h-full flex flex-col min-h-[800px]">
+<div class="flex items-center justify-between mb-lg border-b border-white/5 pb-md">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="hub">hub</span>
+<h3 class="font-headline-md text-sm uppercase tracking-widest text-on-surface">Intelligence Pulse</h3>
+</div>
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+</div>
+<div class="flex-1 space-y-lg overflow-y-auto pr-xs custom-scrollbar">
+<!-- Alert Item -->
+<div class="relative pl-6 border-l border-white/10 group">
+<div class="absolute -left-[5px] top-0 w-[9px] h-[9px] rounded-full bg-sentiment-bullish luminous-line"></div>
+<div class="flex items-center justify-between mb-1">
+<span class="text-[10px] font-data-mono text-primary">09:42:15</span>
+<span class="bg-sentiment-bullish/20 text-sentiment-bullish text-[9px] px-1.5 rounded-sm font-bold">SIGNAL</span>
+</div>
+<p class="text-sm text-on-surface font-medium leading-relaxed">
+                                    Aggressive accumulation detected in <span class="text-primary">EURUSD</span> at psychological level 1.0900.
+                                </p>
+</div>
+<!-- Alert Item -->
+<div class="relative pl-6 border-l border-white/10 group">
+<div class="absolute -left-[5px] top-0 w-[9px] h-[9px] rounded-full bg-primary-container"></div>
+<div class="flex items-center justify-between mb-1">
+<span class="text-[10px] font-data-mono text-primary">09:30:00</span>
+<span class="bg-surface-container-highest text-on-surface-variant text-[9px] px-1.5 rounded-sm font-bold">DATA</span>
+</div>
+<p class="text-sm text-on-surface-variant font-medium leading-relaxed">
+                                    US Initial Jobless Claims: 212K vs 215K expected. Neutral market impact.
+                                </p>
+</div>
+<!-- Alert Item -->
+<div class="relative pl-6 border-l border-white/10 group">
+<div class="absolute -left-[5px] top-0 w-[9px] h-[9px] rounded-full bg-status-delayed"></div>
+<div class="flex items-center justify-between mb-1">
+<span class="text-[10px] font-data-mono text-primary">09:15:42</span>
+<span class="bg-status-delayed/20 text-status-delayed text-[9px] px-1.5 rounded-sm font-bold">VOLATILITY</span>
+</div>
+<p class="text-sm text-on-surface font-medium leading-relaxed">
+                                    VIX Index spiking +4.2%. Defensive rotation observed in Treasury yields.
+                                </p>
+</div>
+<!-- Alert Item -->
+<div class="relative pl-6 border-l border-white/10 group">
+<div class="absolute -left-[5px] top-0 w-[9px] h-[9px] rounded-full bg-sentiment-bullish luminous-line"></div>
+<div class="flex items-center justify-between mb-1">
+<span class="text-[10px] font-data-mono text-primary">08:55:10</span>
+<span class="bg-sentiment-bullish/20 text-sentiment-bullish text-[9px] px-1.5 rounded-sm font-bold">ALERT</span>
+</div>
+<p class="text-sm text-on-surface font-medium leading-relaxed">
+                                    JARVIS has identified a high-probability mean reversion setup for <span class="text-primary">NASDAQ100</span>.
+                                </p>
+</div>
+<!-- Alert Item -->
+<div class="relative pl-6 border-l border-white/10 group">
+<div class="absolute -left-[5px] top-0 w-[9px] h-[9px] rounded-full bg-on-surface-variant opacity-40"></div>
+<div class="flex items-center justify-between mb-1">
+<span class="text-[10px] font-data-mono text-primary">08:30:00</span>
+<span class="bg-surface-container-highest text-on-surface-variant text-[9px] px-1.5 rounded-sm font-bold">INFO</span>
+</div>
+<p class="text-sm text-on-surface-variant font-medium opacity-60">
+                                    Daily pivot points recalculated. All systems nominal.
+                                </p>
+</div>
+</div>
+<button class="mt-md w-full py-2 border border-white/5 rounded-xl text-[10px] font-bold text-on-surface-variant uppercase tracking-widest hover:bg-white/5 transition-all">
+                            View Full Archive
+                        </button>
+</section>
+</div>
+</div>
+<!-- Footer Mantra -->
+<footer class="mt-xl flex flex-col items-center justify-center py-lg border-t border-white/5 relative z-20">
+<div class="flex items-center gap-xl opacity-40 hover:opacity-100 transition-opacity duration-700">
+<span class="font-display-lg text-[24px] uppercase tracking-[0.4em] font-black">Attitude</span>
+<div class="w-1 h-1 rounded-full bg-primary"></div>
+<span class="font-display-lg text-[24px] uppercase tracking-[0.4em] font-black">Improve</span>
+<div class="w-1 h-1 rounded-full bg-primary"></div>
+<span class="font-display-lg text-[24px] uppercase tracking-[0.4em] font-black">Growth</span>
+</div>
+<p class="mt-md text-[10px] font-data-mono text-on-surface-variant uppercase tracking-[0.2em]">JARVIS OS v4.2.0 • Secured Decentralized Protocol</p>
+</footer>
+</main>
+</div>
+<!-- Micro-interactions Script -->
+<script>
+        // Simple micro-interactions for hover effects on glass cards
+        document.querySelectorAll('.glass-panel').forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+                
+                // Slight tilt effect
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                const rotateX = (y - centerY) / 25;
+                const rotateY = (centerX - x) / 25;
+                
+                card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg)`;
+            });
+        });
+    </script>
+</body></html>

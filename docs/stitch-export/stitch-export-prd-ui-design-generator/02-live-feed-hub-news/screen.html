@@ -1,0 +1,464 @@
+<!DOCTYPE html><html class="dark" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>News Feed - JARVIS OS</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#0e0e0e",
+                        "inverse-on-surface": "#313030",
+                        "sentiment-bullish": "#00FFA3",
+                        "on-error": "#690005",
+                        "on-tertiary": "#442b00",
+                        "primary-container": "#00d1ff",
+                        "on-secondary-fixed-variant": "#5700c9",
+                        "tertiary-container": "#feb127",
+                        "status-delayed": "#FFB800",
+                        "surface-tint": "#4cd6ff",
+                        "surface-container-high": "#2a2a2a",
+                        "surface-container": "#201f1f",
+                        "secondary-fixed-dim": "#d1bcff",
+                        "surface-container-low": "#1c1b1b",
+                        "tertiary": "#ffd59c",
+                        "on-secondary-container": "#ddcdff",
+                        "error": "#ffb4ab",
+                        "inverse-primary": "#00677f",
+                        "secondary-container": "#7000ff",
+                        "on-background": "#e5e2e1",
+                        "on-tertiary-container": "#6b4700",
+                        "outline": "#859399",
+                        "status-preliminary": "#00D1FF",
+                        "surface-glass": "rgba(255, 255, 255, 0.05)",
+                        "primary-fixed": "#b7eaff",
+                        "on-primary-fixed": "#001f28",
+                        "surface-variant": "#353534",
+                        "inverse-surface": "#e5e2e1",
+                        "on-tertiary-fixed-variant": "#624000",
+                        "on-error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#004e60",
+                        "primary": "#a4e6ff",
+                        "surface": "#131313",
+                        "surface-bright": "#3a3939",
+                        "secondary": "#d1bcff",
+                        "on-primary-container": "#00566a",
+                        "status-stale": "#FF3B3B",
+                        "on-secondary-fixed": "#23005b",
+                        "surface-container-highest": "#353534",
+                        "tertiary-fixed-dim": "#ffba49",
+                        "secondary-fixed": "#e9ddff",
+                        "error-container": "#93000a",
+                        "status-verified": "#00FFA3",
+                        "surface-dim": "#131313",
+                        "border-subtle": "rgba(255, 255, 255, 0.1)",
+                        "on-surface-variant": "#bbc9cf",
+                        "background": "#131313",
+                        "outline-variant": "#3c494e",
+                        "primary-fixed-dim": "#4cd6ff",
+                        "sentiment-bearish": "#FF3B3B",
+                        "on-surface": "#e5e2e1",
+                        "on-secondary": "#3c0090",
+                        "on-primary": "#003543",
+                        "on-tertiary-fixed": "#291800",
+                        "tertiary-fixed": "#ffddb1"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "20px",
+                        "base": "4px",
+                        "xs": "8px",
+                        "md": "24px",
+                        "lg": "40px",
+                        "xl": "64px",
+                        "sm": "16px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Hanken Grotesk"],
+                        "caption-sm": ["Inter"],
+                        "display-lg-mobile": ["Hanken Grotesk"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "data-mono": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "caption-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "display-lg-mobile": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "data-mono": ["14px", { "lineHeight": "20px", "fontWeight": "500" }]
+                    }
+                }
+            }
+        }
+    </script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@600;700&amp;family=Inter:wght@400;500&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+        body {
+            background-color: #050505;
+            color: #e5e2e1;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        
+        .glass-panel {
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            border-left: 1px solid rgba(255, 255, 255, 0.05);
+            border-right: 1px solid rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+        }
+
+        .neon-glow-primary {
+            box-shadow: 0 0 20px rgba(0, 209, 255, 0.15);
+        }
+
+        .gradient-text {
+            background: linear-gradient(to right, #00d1ff, #a4e6ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Scanline animation for thinking state */
+        @keyframes scanline {
+            0% { top: 0%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+        .scanning-effect {
+            position: relative;
+            overflow: hidden;
+        }
+        .scanning-effect::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: rgba(0, 209, 255, 0.8);
+            box-shadow: 0 0 10px #00d1ff;
+            animation: scanline 2s infinite linear;
+            z-index: 10;
+        }
+        
+        /* Pulse for breaking news */
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(255, 59, 59, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 59, 59, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 59, 59, 0); }
+        }
+        .breaking-pulse {
+            animation: pulse-red 2s infinite;
+        }
+    </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface h-screen flex overflow-hidden">
+<!-- SideNavBar -->
+<nav class="docked left-0 h-full w-64 border-r border-outline-variant bg-surface-container-lowest/50 backdrop-blur-2xl flex flex-col py-md px-sm overflow-y-auto hidden md:flex shrink-0 z-50">
+<!-- Header -->
+<div class="flex items-center gap-xs mb-xl px-xs">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="smart_toy" data-weight="fill" style="font-variation-settings: 'FILL' 1;">smart_toy</span>
+<div>
+<h1 class="font-display-lg text-primary text-xl font-bold tracking-tighter">JARVIS OS</h1>
+<p class="font-caption-sm text-caption-sm text-on-surface-variant">Technocratic Trading</p>
+</div>
+</div>
+<!-- Main Navigation -->
+<div class="flex flex-col gap-xs flex-1">
+<a class="flex items-center gap-sm px-sm py-xs text-on-surface-variant hover:bg-surface-variant/50 rounded-lg transition-all duration-300 hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors duration-200" data-icon="dashboard">dashboard</span>
+<span class="font-body-md text-body-md">Workspace</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-xs text-on-surface-variant hover:bg-surface-variant/50 rounded-lg transition-all duration-300 hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors duration-200" data-icon="smart_toy">smart_toy</span>
+<span class="font-body-md text-body-md">Ask JARVIS</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-xs text-on-surface-variant hover:bg-surface-variant/50 rounded-lg transition-all duration-300 hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors duration-200" data-icon="analytics">analytics</span>
+<span class="font-body-md text-body-md">AI Analysis</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-xs text-on-surface-variant hover:bg-surface-variant/50 rounded-lg transition-all duration-300 hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors duration-200" data-icon="travel_explore">travel_explore</span>
+<span class="font-body-md text-body-md">JARVIS Finder</span>
+</a>
+
+<a class="flex items-center gap-sm px-sm py-xs text-on-surface-variant hover:bg-surface-variant/50 rounded-lg transition-all duration-300 hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors duration-200" data-icon="public">public</span>
+<span class="font-body-md text-body-md">Macro</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-xs bg-primary-container text-on-primary-container rounded-lg font-bold transition-all duration-300" href="#">
+<span class="material-symbols-outlined" data-icon="newspaper" data-weight="fill" style="font-variation-settings: 'FILL' 1;">newspaper</span>
+<span class="font-body-md text-body-md">News Feed</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-xs text-on-surface-variant hover:bg-surface-variant/50 rounded-lg transition-all duration-300 hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors duration-200" data-icon="upload_file">upload_file</span>
+<span class="font-body-md text-body-md">Upload Chart</span>
+</a>
+
+
+</div>
+<!-- CTA & Footer -->
+<div class="mt-auto flex flex-col gap-sm pt-md border-t border-border-subtle">
+<button class="w-full py-xs px-sm bg-primary text-on-primary font-body-md text-body-md font-semibold rounded hover:shadow-[0_0_15px_rgba(0,209,255,0.4)] transition-all duration-200">
+                New Trade Plan
+            </button>
+<div class="flex flex-col gap-xs">
+<a class="flex items-center gap-sm px-sm py-xs text-on-surface-variant hover:bg-surface-variant/50 rounded-lg transition-all duration-300 hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors duration-200" data-icon="help">help</span>
+<span class="font-body-md text-body-md">Support</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-xs text-on-surface-variant hover:bg-surface-variant/50 rounded-lg transition-all duration-300 hover:translate-x-1 group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors duration-200" data-icon="settings">settings</span>
+<span class="font-body-md text-body-md">Settings</span>
+</a>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col h-full overflow-hidden relative">
+<!-- TopNavBar (Mobile mainly, but keeping structure for layout consistency if needed on desktop per PRD) -->
+<header class="flex justify-between items-center w-full px-md h-16 border-b border-outline-variant bg-surface-container/80 backdrop-blur-xl shadow-sm z-40 shrink-0 md:hidden">
+<div class="flex items-center gap-sm">
+<span class="font-display-lg text-headline-md font-bold tracking-tighter text-primary">JARVIS OS</span>
+</div>
+<!-- Mobile nav placeholder -->
+<button class="text-on-surface p-xs">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+</header>
+<!-- Canvas -->
+<div class="flex-1 overflow-y-auto p-md md:p-lg space-y-lg relative">
+<!-- Global Background Elements (Atmospheric) -->
+<div class="absolute inset-0 pointer-events-none overflow-hidden -z-10">
+<div class="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] bg-primary-container/5 blur-[120px] rounded-full"></div>
+<div class="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-secondary-container/5 blur-[150px] rounded-full"></div>
+</div>
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-md mb-md">
+<div>
+<h2 class="font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface tracking-tighter">Real-Time Terminal</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs flex items-center gap-2">
+<span class="material-symbols-outlined text-status-verified text-[16px]" data-icon="circle" data-weight="fill" style="font-variation-settings: 'FILL' 1;">circle</span>
+                        Live data stream connected. Analyzing incoming global events.
+                    </p>
+</div>
+<!-- AI Impact Filter -->
+<div class="glass-panel rounded-lg p-1 flex gap-1 items-center self-start">
+<span class="font-caption-sm text-caption-sm text-on-surface-variant px-sm pb-1">AI Filter:</span>
+<button class="px-sm py-1 bg-surface-variant/50 text-on-surface rounded font-body-md text-body-md border border-border-subtle hover:bg-surface-variant transition-colors">All</button>
+<button class="px-sm py-1 text-sentiment-bullish hover:bg-surface-variant/50 rounded font-body-md text-body-md transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]" data-icon="trending_up">trending_up</span> Bullish
+                    </button>
+<button class="px-sm py-1 text-sentiment-bearish hover:bg-surface-variant/50 rounded font-body-md text-body-md transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]" data-icon="trending_down">trending_down</span> Bearish
+                    </button>
+<button class="px-sm py-1 text-on-surface-variant hover:bg-surface-variant/50 rounded font-body-md text-body-md transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]" data-icon="horizontal_rule">horizontal_rule</span> Neutral
+                    </button>
+</div>
+</div>
+<!-- Breaking Analysis Banner -->
+<div class="glass-panel rounded-xl p-md border-l-4 border-l-sentiment-bearish relative overflow-hidden flex flex-col md:flex-row gap-md items-start md:items-center neon-glow-primary mb-md">
+<div class="absolute top-0 right-0 p-sm opacity-20 pointer-events-none">
+<span class="material-symbols-outlined text-9xl text-sentiment-bearish" data-icon="warning">warning</span>
+</div>
+<div class="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-sentiment-bearish/20 text-sentiment-bearish breaking-pulse">
+<span class="material-symbols-outlined" data-icon="campaign" data-weight="fill" style="font-variation-settings: 'FILL' 1;">campaign</span>
+</div>
+<div class="flex-1 z-10">
+<div class="flex items-center gap-sm mb-1">
+<span class="px-2 py-0.5 bg-sentiment-bearish text-on-error font-caption-sm text-caption-sm rounded-sm uppercase tracking-wider font-bold">Breaking Analysis</span>
+<span class="font-caption-sm text-caption-sm text-on-surface-variant font-data-mono">Just Now</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-2">BOJ Unexpectedly Adjusts Yield Curve Control Policy</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Bank of Japan widens the band around its 10-year yield target. AI models indicate immediate structural shift in JPY pairs.</p>
+</div>
+<div class="flex-shrink-0 flex flex-col gap-2 z-10 w-full md:w-auto">
+<div class="text-right">
+<span class="font-caption-sm text-caption-sm text-on-surface-variant">Primary Impact</span>
+</div>
+<div class="flex gap-2 flex-wrap md:justify-end">
+<div class="px-sm py-xs glass-panel rounded border border-sentiment-bullish/30 flex items-center gap-2">
+<span class="font-data-mono text-data-mono text-on-surface font-bold">USD/JPY</span>
+<span class="font-data-mono text-data-mono text-sentiment-bearish flex items-center"><span class="material-symbols-outlined text-[16px]" data-icon="arrow_downward">arrow_downward</span> -2.4%</span>
+</div>
+<div class="px-sm py-xs glass-panel rounded border border-sentiment-bullish/30 flex items-center gap-2">
+<span class="font-data-mono text-data-mono text-on-surface font-bold">EUR/JPY</span>
+<span class="font-data-mono text-data-mono text-sentiment-bearish flex items-center"><span class="material-symbols-outlined text-[16px]" data-icon="arrow_downward">arrow_downward</span> -1.8%</span>
+</div>
+</div>
+<button class="mt-2 w-full md:w-auto px-md py-xs bg-surface-variant/80 border border-border-subtle text-on-surface font-body-md text-body-md rounded hover:bg-surface-variant transition-colors flex justify-center items-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="analytics">analytics</span> Open Trade Planner
+                    </button>
+</div>
+</div>
+<!-- Grid Layout for News Feed -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-gutter">
+<!-- Main Feed Column (8 cols) -->
+<div class="xl:col-span-8 flex flex-col gap-md">
+<!-- News Card 1 -->
+<div class="glass-panel rounded-xl p-0 overflow-hidden flex flex-col group">
+<!-- Top Bar / Metadata -->
+<div class="px-md py-sm border-b border-border-subtle bg-surface-container-highest/30 flex justify-between items-center">
+<div class="flex items-center gap-sm">
+<span class="font-data-mono text-data-mono text-on-surface-variant text-[12px]">14:23 UTC</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="font-caption-sm text-caption-sm text-primary uppercase tracking-widest">Macro Data</span>
+</div>
+<div class="flex gap-2">
+<span class="px-2 py-1 bg-surface-variant rounded text-[11px] font-data-mono text-on-surface-variant border border-border-subtle flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-sentiment-bullish" data-icon="verified">verified</span> Bloomberg
+                                </span>
+</div>
+</div>
+<!-- Content Area -->
+<div class="p-md flex flex-col gap-md">
+<h3 class="font-headline-md text-headline-md text-on-surface leading-tight group-hover:text-primary transition-colors">US Non-Farm Payrolls Exceed Expectations Substantially</h3>
+<!-- Tabs (Source Facts vs AI Interpretation) -->
+<div class="flex flex-col gap-sm">
+<!-- Minimalist internal tab system -->
+<div class="flex gap-md border-b border-border-subtle pb-2">
+<button class="font-caption-sm text-caption-sm text-primary border-b-2 border-primary pb-1 -mb-[9px] font-bold">AI Interpretation</button>
+<button class="font-caption-sm text-caption-sm text-on-surface-variant hover:text-on-surface transition-colors pb-1">Source Facts</button>
+</div>
+<!-- Tab Content (AI Active) -->
+<div class="pt-sm">
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                                        The 311k print significantly outperforms the 205k consensus. JARVIS models classify this as a <span class="text-primary font-medium">high-conviction hawkish signal</span>. Expect immediate repricing of terminal Fed Funds rate expectations upwards by 25-50 bps. Yield curve inversion likely to deepen.
+                                    </p>
+<!-- Impact Tags -->
+<div class="mt-md flex flex-wrap gap-2">
+<div class="flex items-center gap-2 px-sm py-1 bg-sentiment-bullish/10 border border-sentiment-bullish/20 rounded">
+<span class="font-data-mono text-data-mono font-bold text-on-surface">DXY</span>
+<span class="material-symbols-outlined text-[16px] text-sentiment-bullish" data-icon="trending_up">trending_up</span>
+</div>
+<div class="flex items-center gap-2 px-sm py-1 bg-sentiment-bearish/10 border border-sentiment-bearish/20 rounded">
+<span class="font-data-mono text-data-mono font-bold text-on-surface">XAU/USD</span>
+<span class="material-symbols-outlined text-[16px] text-sentiment-bearish" data-icon="trending_down">trending_down</span>
+</div>
+<div class="flex items-center gap-2 px-sm py-1 bg-sentiment-bearish/10 border border-sentiment-bearish/20 rounded">
+<span class="font-data-mono text-data-mono font-bold text-on-surface">NAS100</span>
+<span class="material-symbols-outlined text-[16px] text-sentiment-bearish" data-icon="trending_down">trending_down</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- News Card 2 (Thinking State Demo) -->
+<div class="glass-panel rounded-xl p-0 overflow-hidden flex flex-col scanning-effect border-primary/30">
+<div class="px-md py-sm border-b border-border-subtle bg-surface-container-highest/30 flex justify-between items-center">
+<div class="flex items-center gap-sm">
+<span class="font-data-mono text-data-mono text-on-surface-variant text-[12px]">14:15 UTC</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="font-caption-sm text-caption-sm text-tertiary-container uppercase tracking-widest">Geopolitics</span>
+</div>
+<div class="flex gap-2">
+<span class="px-2 py-1 bg-surface-variant rounded text-[11px] font-data-mono text-on-surface-variant border border-border-subtle flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-status-delayed animate-pulse" data-icon="sync">sync</span> Reuters
+                                </span>
+</div>
+</div>
+<div class="p-md flex flex-col gap-md opacity-70">
+<h3 class="font-headline-md text-headline-md text-on-surface leading-tight">OPEC+ Unscheduled Meeting Rumored for Weekend</h3>
+<div class="flex flex-col gap-sm">
+<div class="flex gap-md border-b border-border-subtle pb-2">
+<button class="font-caption-sm text-caption-sm text-on-surface-variant pb-1">AI Interpretation</button>
+<button class="font-caption-sm text-caption-sm text-primary border-b-2 border-primary pb-1 -mb-[9px] font-bold">Source Facts</button>
+</div>
+<div class="pt-sm">
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                                        Multiple delegates indicate a virtual meeting is being organized. No official agenda released.
+                                    </p>
+<div class="mt-md p-sm bg-surface-variant/30 rounded border border-border-subtle flex items-start gap-sm">
+<span class="material-symbols-outlined text-primary text-[20px] animate-spin" data-icon="settings" style="animation-duration: 3s;">settings</span>
+<div>
+<p class="font-caption-sm text-caption-sm text-primary mb-1">JARVIS AI Processing...</p>
+<p class="font-data-mono text-data-mono text-[11px] text-on-surface-variant">Cross-referencing satellite tanker data, previous unscheduled meeting outcomes, and current Brent crude technicals.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Sidebar Column (4 cols) -->
+<div class="xl:col-span-4 flex flex-col gap-md hidden xl:flex">
+<!-- Market Context Widget -->
+<div class="glass-panel rounded-xl p-md">
+<h4 class="font-body-md text-body-md font-bold text-on-surface mb-md flex items-center gap-2 border-b border-border-subtle pb-sm">
+<span class="material-symbols-outlined text-primary" data-icon="radar">radar</span>
+                            Sentiment Heatmap
+                        </h4>
+<div class="flex flex-col gap-sm">
+<!-- Heatmap Row -->
+<div class="flex justify-between items-center group">
+<span class="font-data-mono text-data-mono text-on-surface">USD</span>
+<div class="flex-1 mx-sm h-2 bg-surface-variant rounded-full overflow-hidden flex">
+<div class="bg-sentiment-bullish h-full w-[75%] shadow-[0_0_8px_#00FFA3]"></div>
+</div>
+<span class="font-data-mono text-data-mono text-sentiment-bullish w-10 text-right">+75</span>
+</div>
+<div class="flex justify-between items-center group">
+<span class="font-data-mono text-data-mono text-on-surface">JPY</span>
+<div class="flex-1 mx-sm h-2 bg-surface-variant rounded-full overflow-hidden flex flex-row-reverse">
+<div class="bg-sentiment-bearish h-full w-[80%] shadow-[0_0_8px_#FF3B3B]"></div>
+</div>
+<span class="font-data-mono text-data-mono text-sentiment-bearish w-10 text-right">-80</span>
+</div>
+<div class="flex justify-between items-center group">
+<span class="font-data-mono text-data-mono text-on-surface">EUR</span>
+<div class="flex-1 mx-sm h-2 bg-surface-variant rounded-full overflow-hidden flex flex-row-reverse">
+<div class="bg-sentiment-bearish h-full w-[20%] opacity-50"></div>
+</div>
+<span class="font-data-mono text-data-mono text-on-surface-variant w-10 text-right">-20</span>
+</div>
+</div>
+</div>
+<!-- AI Watchlist Context -->
+<div class="glass-panel rounded-xl p-md flex-1">
+<h4 class="font-body-md text-body-md font-bold text-on-surface mb-md flex items-center gap-2 border-b border-border-subtle pb-sm">
+<span class="material-symbols-outlined text-secondary" data-icon="visibility">visibility</span>
+                            High Volatility Watch
+                        </h4>
+<ul class="flex flex-col gap-xs">
+<li class="p-sm bg-surface-variant/30 rounded border border-border-subtle hover:bg-surface-variant/50 transition-colors cursor-pointer flex justify-between items-center">
+<div>
+<span class="font-data-mono text-data-mono text-on-surface font-bold block">US30</span>
+<span class="font-caption-sm text-caption-sm text-on-surface-variant">Awaiting FOMC Mins</span>
+</div>
+<span class="material-symbols-outlined text-outline" data-icon="chevron_right">chevron
+
+</span></li></ul></div></div></div></div></main></body></html>

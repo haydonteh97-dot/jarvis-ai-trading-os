@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>JARVIS Finder | Opportunity Scanner</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;900&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glow-primary: rgba(164, 230, 255, 0.15);
+        }
+
+        body {
+            background-color: #050505;
+            color: #e5e2e1;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(40px);
+            border: 1px solid var(--glass-border);
+        }
+
+        .premium-border-active {
+            border-left: 2px solid #a4e6ff;
+            background: rgba(164, 230, 255, 0.05);
+        }
+
+        .scanline-effect {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scanline-effect::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent 50%, rgba(164, 230, 255, 0.02) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        .luminous-fill {
+            box-shadow: 0 0 10px #4cd6ff;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(164, 230, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .animate-pulse-glow {
+            animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#4cd6ff",
+                        "on-error-container": "#ffdad6",
+                        "primary-container": "#00d1ff",
+                        "inverse-primary": "#00677f",
+                        "on-tertiary-fixed": "#291800",
+                        "error": "#ffb4ab",
+                        "surface-dim": "#131313",
+                        "on-secondary-fixed": "#23005b",
+                        "surface-glass": "rgba(255, 255, 255, 0.05)",
+                        "surface-container": "#201f1f",
+                        "tertiary-container": "#feb127",
+                        "on-surface": "#e5e2e1",
+                        "on-background": "#e5e2e1",
+                        "primary-fixed": "#b7eaff",
+                        "surface-bright": "#3a3939",
+                        "secondary": "#d1bcff",
+                        "on-secondary-fixed-variant": "#5700c9",
+                        "on-surface-variant": "#bbc9cf",
+                        "on-tertiary-container": "#6b4700",
+                        "secondary-fixed-dim": "#d1bcff",
+                        "on-primary-fixed": "#001f28",
+                        "text-glow": "rgba(164, 230, 255, 0.4)",
+                        "sentiment-bearish": "#FF3B3B",
+                        "inverse-surface": "#e5e2e1",
+                        "on-error": "#690005",
+                        "surface-container-highest": "#353534",
+                        "secondary-container": "#7000ff",
+                        "outline-variant": "#3c494e",
+                        "on-tertiary": "#442b00",
+                        "on-primary": "#003543",
+                        "surface-container-high": "#2a2a2a",
+                        "on-secondary-container": "#ddcdff",
+                        "border-subtle": "rgba(255, 255, 255, 0.1)",
+                        "status-delayed": "#FFB800",
+                        "secondary-fixed": "#e9ddff",
+                        "background": "#131313",
+                        "primary": "#a4e6ff",
+                        "on-primary-container": "#00566a",
+                        "tertiary-fixed": "#ffddb1",
+                        "surface": "#131313",
+                        "surface-container-low": "#1c1b1b",
+                        "inverse-on-surface": "#313030",
+                        "tertiary-fixed-dim": "#ffba49",
+                        "on-primary-fixed-variant": "#004e60",
+                        "error-container": "#93000a",
+                        "sentiment-bullish": "#00FFA3",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-tertiary-fixed-variant": "#624000",
+                        "primary-fixed-dim": "#4cd6ff",
+                        "on-secondary": "#3c0090",
+                        "surface-variant": "#353534",
+                        "outline": "#859399",
+                        "tertiary": "#ffd59c"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "20px",
+                        "margin-mobile": "16px",
+                        "xl": "64px",
+                        "xs": "8px",
+                        "lg": "40px",
+                        "md": "24px",
+                        "sm": "16px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "caption-sm": ["Inter"],
+                        "data-mono": ["JetBrains Mono"],
+                        "headline-md": ["Hanken Grotesk"],
+                        "display-lg-mobile": ["Hanken Grotesk"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "display-lg": ["Hanken Grotesk"],
+                        "label-xs": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "caption-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "data-mono": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "display-lg-mobile": ["30px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "label-xs": ["10px", {"lineHeight": "12px", "letterSpacing": "0.1em", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface select-none">
+<!-- Top Navigation -->
+<header class="fixed top-0 z-40 flex items-center justify-between w-full h-16 px-xl ml-64 bg-surface-dim/50 backdrop-blur-xl border-b border-border-subtle">
+<div class="flex items-center space-x-md">
+<div class="relative flex items-center px-sm py-xs bg-surface-glass rounded-full border border-border-subtle group focus-within:ring-1 focus-within:ring-primary/30">
+<span class="material-symbols-outlined text-primary text-body-md mr-xs">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-md font-body-md w-64 placeholder:text-on-surface-variant" placeholder="Search Assets or Setups..." type="text"/>
+<div class="px-xs py-[2px] bg-surface-container-highest rounded text-label-xs font-label-xs text-on-surface-variant ml-xs">CMD+K</div>
+</div>
+</div>
+<div class="flex items-center space-x-lg">
+<div class="flex items-center space-x-sm">
+<button class="p-xs text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-xs text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">sensors</span>
+</button>
+<button class="p-xs text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">speed</span>
+</button>
+</div>
+<div class="flex items-center space-x-xs pl-md border-l border-border-subtle">
+<img class="w-8 h-8 rounded-full border border-primary/20" data-alt="Close-up portrait of a high-tech system administrator in a futuristic control center environment, illuminated by soft cyan light from holographic displays. The individual has a focused, professional expression, wearing a sleek, dark technical uniform. The background is a sophisticated blur of data streams and obsidian glass panels, creating a cinematic and institutional aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqfKYs8H6l7pWBkSv9mw4FeQZrTyEiKANbAdKXuKY70RgTQBaaBgVOhsOL-nyT-BC232wTt8WGZUT01BepWAwEA_aNwzqdqYmsezUrLG17Lt4veRN88qPErvFm2qdGHVVgB97vZILkrLQCmRli6CD35EHswU5zFEKYi4ql1CbOtheiYF-T6iqDMw-9hBVZzpFYiH19zEmwK8KaEfII5HygpRiMlGy0ygynmN_KOkcMHlO8K-COIQteQkhDCN8pJ-vHyafhHcOZWi8"/>
+</div>
+</div>
+</header>
+<!-- Side Navigation -->
+<aside class="fixed left-0 top-0 h-full w-64 border-r border-border-subtle bg-surface-container-lowest/30 backdrop-blur-3xl flex flex-col py-lg px-sm z-50">
+<div class="mb-lg px-sm">
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface tracking-tighter">JARVIS OS</h1>
+<p class="font-label-xs text-label-xs uppercase tracking-widest text-primary-fixed-dim">Institutional Grade</p>
+</div>
+<nav class="flex-1 space-y-base overflow-y-auto custom-scrollbar">
+<a class="flex items-center space-x-sm px-sm py-sm rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-xs text-label-xs uppercase tracking-widest">Workspace</span>
+</a>
+<a class="flex items-center space-x-sm px-sm py-sm rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">psychology</span>
+<span class="font-label-xs text-label-xs uppercase tracking-widest">Ask JARVIS</span>
+</a>
+<a class="flex items-center space-x-sm px-sm py-sm rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-xs text-label-xs uppercase tracking-widest">AI Analysis</span>
+</a>
+<a class="flex items-center space-x-sm px-sm py-sm rounded-lg text-primary font-bold border-l-2 border-primary bg-primary/5" href="#">
+<span class="material-symbols-outlined">search_insights</span>
+<span class="font-label-xs text-label-xs uppercase tracking-widest">JARVIS Finder</span>
+</a>
+<a class="flex items-center space-x-sm px-sm py-sm rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">language</span>
+<span class="font-label-xs text-label-xs uppercase tracking-widest">Macro</span>
+</a>
+<a class="flex items-center space-x-sm px-sm py-sm rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">rss_feed</span>
+<span class="font-label-xs text-label-xs uppercase tracking-widest">News Feed</span>
+</a>
+<a class="flex items-center space-x-sm px-sm py-sm rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">add_chart</span>
+<span class="font-label-xs text-label-xs uppercase tracking-widest">Upload Chart</span>
+</a>
+</nav>
+<div class="mt-auto space-y-xs">
+<button class="w-full py-sm bg-primary/10 border border-primary/20 text-primary font-label-xs text-label-xs uppercase tracking-widest rounded-lg hover:bg-primary/20 transition-all active:scale-95 mb-md">
+                New Trade Plan
+            </button>
+<a class="flex items-center space-x-sm px-sm py-xs text-on-surface-variant hover:text-on-surface" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-xs text-label-xs uppercase tracking-widest">Settings</span>
+</a>
+<a class="flex items-center space-x-sm px-sm py-xs text-on-surface-variant hover:text-on-surface" href="#">
+<span class="material-symbols-outlined">help_center</span>
+<span class="font-label-xs text-label-xs uppercase tracking-widest">Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-64 pt-16 h-screen flex flex-col overflow-hidden bg-surface-dim">
+<!-- Filter Header -->
+<div class="px-xl py-md bg-surface-container-low/40 border-b border-border-subtle flex items-center justify-between">
+<div class="flex items-center space-x-md">
+<h2 class="font-headline-md text-headline-md font-bold">Opportunity Scanner</h2>
+<div class="flex items-center space-x-xs">
+<div class="px-xs py-[2px] bg-sentiment-bullish/10 border border-sentiment-bullish/20 rounded text-[10px] text-sentiment-bullish font-bold uppercase tracking-wider">LIVE FEED</div>
+<div class="w-2 h-2 rounded-full bg-sentiment-bullish animate-pulse"></div>
+</div>
+</div>
+<div class="flex items-center space-x-sm">
+<div class="flex bg-surface-container-highest rounded-lg p-1">
+<button class="px-md py-1 bg-surface-bright rounded text-label-xs font-label-xs uppercase tracking-widest text-primary shadow-sm transition-all">Crypto</button>
+<button class="px-md py-1 rounded text-label-xs font-label-xs uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-all">Forex</button>
+<button class="px-md py-1 rounded text-label-xs font-label-xs uppercase tracking-widest text-on-surface-variant hover:text-on-surface transition-all">Equities</button>
+</div>
+<div class="h-6 w-[1px] bg-border-subtle"></div>
+<button class="flex items-center space-x-xs px-sm py-1.5 border border-border-subtle rounded-lg text-label-xs font-label-xs uppercase tracking-widest hover:bg-white/5">
+<span class="material-symbols-outlined text-[16px]">filter_list</span>
+<span>Advanced Filters</span>
+</button>
+</div>
+</div>
+<div class="flex-1 flex overflow-hidden">
+<!-- Left: Vertical Setup List -->
+<div class="w-1/3 border-r border-border-subtle overflow-y-auto custom-scrollbar bg-surface-container-lowest/20">
+<!-- Setup Item Active -->
+<div class="premium-border-active p-md cursor-pointer transition-all hover:bg-primary/5 group border-b border-border-subtle relative overflow-hidden">
+<div class="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-primary/5 to-transparent pointer-events-none"></div>
+<div class="flex justify-between items-start mb-xs relative">
+<div class="flex items-center space-x-xs">
+<span class="font-data-mono text-data-mono font-bold text-primary">BTC/USDT</span>
+<span class="px-xs py-[2px] bg-surface-container-highest rounded text-[10px] font-bold text-on-surface-variant">1H</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-data-mono text-data-mono font-bold text-sentiment-bullish">92%</span>
+<span class="text-[9px] uppercase tracking-tighter text-on-surface-variant">Conf. Score</span>
+</div>
+</div>
+<div class="flex justify-between items-end relative">
+<div class="space-y-[2px]">
+<div class="text-on-surface font-semibold text-body-md">Liquidity Sweep</div>
+<div class="text-label-xs font-label-xs text-on-surface-variant uppercase tracking-widest">Institutional Rejection</div>
+</div>
+<div class="text-[10px] font-data-mono text-on-surface-variant">02:14:45 AGO</div>
+</div>
+</div>
+<!-- Setup Item 2 -->
+<div class="p-md cursor-pointer transition-all hover:bg-white/5 border-b border-border-subtle">
+<div class="flex justify-between items-start mb-xs">
+<div class="flex items-center space-x-xs">
+<span class="font-data-mono text-data-mono font-bold">ETH/USDT</span>
+<span class="px-xs py-[2px] bg-surface-container-highest rounded text-[10px] font-bold text-on-surface-variant">15M</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-data-mono text-data-mono font-bold text-status-delayed">78%</span>
+<span class="text-[9px] uppercase tracking-tighter text-on-surface-variant">Conf. Score</span>
+</div>
+</div>
+<div class="flex justify-between items-end">
+<div class="space-y-[2px]">
+<div class="text-on-surface font-semibold text-body-md">Order Block</div>
+<div class="text-label-xs font-label-xs text-on-surface-variant uppercase tracking-widest">Value Gap Mitigation</div>
+</div>
+<div class="text-[10px] font-data-mono text-on-surface-variant">05:22:10 AGO</div>
+</div>
+</div>
+<!-- Setup Item 3 -->
+<div class="p-md cursor-pointer transition-all hover:bg-white/5 border-b border-border-subtle">
+<div class="flex justify-between items-start mb-xs">
+<div class="flex items-center space-x-xs">
+<span class="font-data-mono text-data-mono font-bold">SOL/USDT</span>
+<span class="px-xs py-[2px] bg-surface-container-highest rounded text-[10px] font-bold text-on-surface-variant">4H</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-data-mono text-data-mono font-bold text-sentiment-bullish">84%</span>
+<span class="text-[9px] uppercase tracking-tighter text-on-surface-variant">Conf. Score</span>
+</div>
+</div>
+<div class="flex justify-between items-end">
+<div class="space-y-[2px]">
+<div class="text-on-surface font-semibold text-body-md">Golden Pocket</div>
+<div class="text-label-xs font-label-xs text-on-surface-variant uppercase tracking-widest">Fibonacci Retracement</div>
+</div>
+<div class="text-[10px] font-data-mono text-on-surface-variant">12:10:00 AGO</div>
+</div>
+</div>
+<!-- Setup Item 4 -->
+<div class="p-md cursor-pointer transition-all hover:bg-white/5 border-b border-border-subtle">
+<div class="flex justify-between items-start mb-xs">
+<div class="flex items-center space-x-xs">
+<span class="font-data-mono text-data-mono font-bold text-sentiment-bearish">EUR/USD</span>
+<span class="px-xs py-[2px] bg-surface-container-highest rounded text-[10px] font-bold text-on-surface-variant">D1</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-data-mono text-data-mono font-bold text-sentiment-bearish">89%</span>
+<span class="text-[9px] uppercase tracking-tighter text-on-surface-variant">Conf. Score</span>
+</div>
+</div>
+<div class="flex justify-between items-end">
+<div class="space-y-[2px]">
+<div class="text-on-surface font-semibold text-body-md">Distribution Peak</div>
+<div class="text-label-xs font-label-xs text-on-surface-variant uppercase tracking-widest">Wyckoff Phase C</div>
+</div>
+<div class="text-[10px] font-data-mono text-on-surface-variant">01:05:30 AGO</div>
+</div>
+</div>
+<!-- Setup Item 5 -->
+<div class="p-md cursor-pointer transition-all hover:bg-white/5 border-b border-border-subtle">
+<div class="flex justify-between items-start mb-xs">
+<div class="flex items-center space-x-xs">
+<span class="font-data-mono text-data-mono font-bold">XAU/USD</span>
+<span class="px-xs py-[2px] bg-surface-container-highest rounded text-[10px] font-bold text-on-surface-variant">1H</span>
+</div>
+<div class="flex flex-col items-end">
+<span class="font-data-mono text-data-mono font-bold text-status-delayed">65%</span>
+<span class="text-[9px] uppercase tracking-tighter text-on-surface-variant">Conf. Score</span>
+</div>
+</div>
+<div class="flex justify-between items-end">
+<div class="space-y-[2px]">
+<div class="text-on-surface font-semibold text-body-md">Mean Reversion</div>
+<div class="text-label-xs font-label-xs text-on-surface-variant uppercase tracking-widest">Bollinger Band Squeeze</div>
+</div>
+<div class="text-[10px] font-data-mono text-on-surface-variant">03:45:12 AGO</div>
+</div>
+</div>
+</div>
+<!-- Right: Preview Pane -->
+<div class="flex-1 overflow-y-auto custom-scrollbar p-lg space-y-lg relative scanline-effect">
+<!-- Ambient Glow Background -->
+<div class="absolute -top-40 -right-40 w-[600px] h-[600px] bg-primary/10 blur-[120px] rounded-full pointer-events-none"></div>
+<div class="flex justify-between items-start">
+<div>
+<div class="flex items-center space-x-sm mb-xs">
+<h3 class="font-display-lg text-[40px] font-black tracking-tight leading-none">BTC/USDT</h3>
+<span class="px-sm py-1 bg-sentiment-bullish/10 border border-sentiment-bullish/30 rounded-full text-sentiment-bullish text-label-xs font-bold uppercase tracking-widest">Active Signal</span>
+</div>
+<p class="text-on-surface-variant font-body-lg">Liquidity Sweep found at 64,230.12 demand zone.</p>
+</div>
+<div class="flex flex-col items-end">
+<div class="text-[56px] font-black leading-none text-primary mb-1">92</div>
+<div class="text-label-xs font-label-xs uppercase tracking-widest text-primary-fixed-dim">Intelligence Score</div>
+</div>
+</div>
+<!-- Mini Chart Container -->
+<div class="glass-panel w-full aspect-video rounded-xl relative overflow-hidden group">
+<div class="absolute inset-0 bg-surface-container-lowest/50"></div>
+<!-- Decorative Chart Elements -->
+<div class="absolute inset-0 flex items-end px-md py-xl space-x-[2px] opacity-20">
+<div class="w-2 h-[40%] bg-sentiment-bullish rounded-t"></div>
+<div class="w-2 h-[55%] bg-sentiment-bullish rounded-t"></div>
+<div class="w-2 h-[45%] bg-sentiment-bearish rounded-t"></div>
+<div class="w-2 h-[60%] bg-sentiment-bullish rounded-t"></div>
+<div class="w-2 h-[30%] bg-sentiment-bearish rounded-t"></div>
+<div class="w-2 h-[20%] bg-sentiment-bearish rounded-t"></div>
+<div class="w-2 h-[80%] bg-sentiment-bullish rounded-t"></div>
+<div class="w-2 h-[95%] bg-sentiment-bullish rounded-t relative">
+<div class="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-primary rounded-full blur-sm animate-pulse"></div>
+</div>
+</div>
+<div class="w-full h-full object-cover mix-blend-screen opacity-60" data-alt="A futuristic and cinematic financial trading chart interface with neon cyan and magenta candlestick patterns. The background is a deep obsidian glass with subtle hexagonal grid patterns and glowing data points. A large, transparent overlay shows AI-generated trend lines and liquidity zones highlighted in soft luminous green. The overall mood is high-stakes, surgical, and technologically sophisticated." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDrNOJi34YmB9_cJQD0-3Ox3PAvfjt00BDr01La9ydqpbUEHbLZ6G8UnL7tKIxeeTnppUWXwPryKRmg3kX1Z0NiaM_ezTCXCmGYLmhZW1w8z2nxz7dRAsvdjtGtgMniuZnV-M4GqNxNFWW1_oRXCxkHcvtcDhaABHDmmDZSvCfB6hhDzJQn9Of-5yLELb6pAOABmk2IQmM_iK3UIL2HOSIJM4QJlXggCxnO7NRpB0JeGffjT3cU3VTI2TyGBxn938LC4563s1Mr5HY')"></div>
+<div class="absolute inset-0 p-md flex flex-col justify-between">
+<div class="flex justify-between items-start">
+<div class="flex space-x-sm">
+<div class="px-sm py-1 bg-black/40 backdrop-blur-md border border-white/10 rounded-lg text-label-xs font-data-mono">
+                                    EMA 20/50/200 <span class="text-sentiment-bullish">Crossover</span>
+</div>
+<div class="px-sm py-1 bg-black/40 backdrop-blur-md border border-white/10 rounded-lg text-label-xs font-data-mono">
+                                    VOL: <span class="text-primary">1.2B</span>
+</div>
+</div>
+<button class="p-xs bg-black/40 backdrop-blur-md border border-white/10 rounded-lg hover:bg-white/10 transition-all">
+<span class="material-symbols-outlined text-[18px]">open_in_full</span>
+</button>
+</div>
+<div class="flex justify-center space-x-lg bg-black/60 backdrop-blur-lg p-sm border-t border-white/10 rounded-b-xl">
+<div class="text-center">
+<div class="text-label-xs text-on-surface-variant uppercase tracking-widest mb-1">Entry Range</div>
+<div class="font-data-mono text-on-surface">64,200 - 64,500</div>
+</div>
+<div class="text-center">
+<div class="text-label-xs text-on-surface-variant uppercase tracking-widest mb-1">Stop Loss</div>
+<div class="font-data-mono text-sentiment-bearish">63,850</div>
+</div>
+<div class="text-center">
+<div class="text-label-xs text-on-surface-variant uppercase tracking-widest mb-1">Target 1</div>
+<div class="font-data-mono text-sentiment-bullish">66,400</div>
+</div>
+</div>
+</div>
+</div>
+<!-- AI Reasoning Section -->
+<div class="grid grid-cols-2 gap-gutter">
+<div class="glass-panel p-md rounded-xl border-l-4 border-l-primary/40">
+<h4 class="text-label-xs font-label-xs text-primary uppercase tracking-widest mb-md flex items-center">
+<span class="material-symbols-outlined text-[14px] mr-xs">bolt</span>
+                            Neural Logic Breakdown
+                        </h4>
+<ul class="space-y-sm">
+<li class="flex items-start space-x-sm group">
+<div class="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 luminous-fill"></div>
+<p class="text-body-md text-on-surface-variant leading-tight group-hover:text-on-surface transition-colors">
+                                    Detected institutional stop-run below current consolidation range. High probability of retail trapped shorts.
+                                </p>
+</li>
+<li class="flex items-start space-x-sm group">
+<div class="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 luminous-fill"></div>
+<p class="text-body-md text-on-surface-variant leading-tight group-hover:text-on-surface transition-colors">
+                                    CVD Divergence confirmed on the 15M timeframe, showing massive buy-side absorption.
+                                </p>
+</li>
+<li class="flex items-start space-x-sm group">
+<div class="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 luminous-fill"></div>
+<p class="text-body-md text-on-surface-variant leading-tight group-hover:text-on-surface transition-colors">
+                                    Macro context: SPX correlation breaking positive; flight to BTC as digital gold narrative strengthening.
+                                </p>
+</li>
+</ul>
+</div>
+<div class="space-y-sm">
+<div class="glass-panel p-md rounded-xl">
+<div class="flex justify-between items-center mb-sm">
+<span class="text-label-xs font-label-xs uppercase tracking-widest text-on-surface-variant">Market Volatility</span>
+<span class="text-label-xs font-data-mono text-status-delayed">MEDIUM (18%)</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-status-delayed luminous-fill w-[18%]"></div>
+</div>
+</div>
+<div class="glass-panel p-md rounded-xl">
+<div class="flex justify-between items-center mb-sm">
+<span class="text-label-xs font-label-xs uppercase tracking-widest text-on-surface-variant">Orderbook Delta</span>
+<span class="text-label-xs font-data-mono text-sentiment-bullish">+2.4M</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-sentiment-bullish luminous-fill w-[72%]"></div>
+</div>
+</div>
+<div class="glass-panel p-md rounded-xl">
+<div class="flex justify-between items-center mb-sm">
+<span class="text-label-xs font-label-xs uppercase tracking-widest text-on-surface-variant">Sentiment Pulse</span>
+<span class="text-label-xs font-data-mono text-primary">BULLISH</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-primary luminous-fill w-[85%]"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- CTA Actions -->
+<div class="flex space-x-md pt-md">
+<button class="flex-1 py-md bg-primary text-on-primary font-bold rounded-xl flex items-center justify-center space-x-sm hover:brightness-110 active:scale-[0.98] transition-all shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined">rocket_launch</span>
+<span>EXECUTE TRADE PLAN</span>
+</button>
+<button class="px-xl py-md border border-border-subtle rounded-xl font-bold hover:bg-white/5 transition-all active:scale-[0.98]">
+                        ADD TO WATCHLIST
+                    </button>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Intelligence Node -->
+<div class="fixed bottom-xs right-xs z-50">
+<div class="glass-panel px-sm py-xs rounded-full border border-primary/30 flex items-center space-x-sm shadow-2xl">
+<div class="w-2 h-2 rounded-full bg-primary animate-pulse-glow"></div>
+<span class="text-[10px] font-data-mono text-primary uppercase tracking-widest">JARVIS Core Synced</span>
+<span class="h-3 w-[1px] bg-border-subtle"></span>
+<span class="text-[10px] font-data-mono text-on-surface-variant">Latency: 12ms</span>
+</div>
+</div>
+<script>
+        // Micro-interaction for list item clicks
+        document.querySelectorAll('.w-1\\/3 > div').forEach(item => {
+            item.addEventListener('click', function() {
+                // Remove active classes
+                document.querySelectorAll('.w-1\\/3 > div').forEach(i => {
+                    i.classList.remove('premium-border-active', 'bg-primary/5');
+                    const textElements = i.querySelectorAll('.text-primary');
+                    textElements.forEach(el => el.classList.remove('text-primary'));
+                });
+                
+                // Add active classes
+                this.classList.add('premium-border-active', 'bg-primary/5');
+                const title = this.querySelector('.font-data-mono');
+                if (title) title.classList.add('text-primary');
+                
+                // Simulate loading content in right pane
+                const previewPane = document.querySelector('.flex-1.overflow-y-auto');
+                previewPane.style.opacity = '0.5';
+                setTimeout(() => {
+                    previewPane.style.opacity = '1';
+                }, 150);
+            });
+        });
+    </script>
+</body></html>

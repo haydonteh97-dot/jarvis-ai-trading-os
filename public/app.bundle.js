@@ -1976,45 +1976,28 @@
 	function loginPage() {
 		const page = el("main", "login-page");
 		page.innerHTML = `
-    <section class="login-panel">
-      <div class="login-copy">
+    <div class="login-grid" aria-hidden="true"></div>
+    <section class="login-panel stitch-login-panel">
+      <div class="login-copy stitch-login-brand">
         <div class="login-brand-stage">
           <img class="apex-logo hero-logo" src="${logoSrc}" alt="APEX" />
-          <span>ATTITUDE • IMPROVE • GROWTH</span>
         </div>
         <p class="eyebrow">JARVIS AI Trading Operating System</p>
-        <h1>Welcome back.</h1>
-        <p>Your premium AI trading workspace for market intelligence, planning, and disciplined execution.</p>
       </div>
       <form class="login-form">
         <div class="login-form-head">
-          <strong>Sign in to JARVIS</strong>
-          <span>Use demo password <b>apex</b>. Admin demo uses <b>apex-owner</b>.</span>
+          <strong>Welcome</strong>
+          <span>Your premium AI trading workspace for market intelligence, planning, and disciplined execution.</span>
         </div>
-        <label>Email</label>
-        <input id="emailInput" type="email" value="${mockUser.name.toLowerCase()}@apex.local" aria-label="Email" />
-        <label>Password</label>
-        <input id="accessInput" type="password" value="apex" aria-label="Password" />
-        <label class="remember-row">
-          <input id="rememberInput" type="checkbox" checked />
-          <span>Remember Me</span>
-        </label>
-        <button type="submit">Login</button>
-        <div class="auth-links">
-          <a href="${mentorSetupLink}" id="setupLink">Create Account</a>
-          <a href="#reset" id="forgotLink">Forgot Password</a>
-        </div>
-        <div class="social-login">
-          <button type="button">Google</button>
-          <button type="button">Apple</button>
-          <button type="button" disabled>Discord Coming Soon</button>
-        </div>
-        <div class="setup-link">
-          <span>New to APEX?</span>
-          <a href="${mentorSetupLink}" id="mentorLink">Start setup with your mentor link</a>
-        </div>
+        <label>Email Address</label>
+        <input id="emailInput" type="email" value="${mockUser.name.toLowerCase()}@apex.local" aria-label="Email Address" />
+        <label>Beta Invite Code</label>
+        <input id="accessInput" type="password" value="apex" aria-label="Beta Invite Code" />
+        <button type="submit">Enter Terminal <span>→</span></button>
+        <div class="auth-links"><a href="${mentorSetupLink}" id="setupLink">Terms of Service</a><a href="#privacy" id="forgotLink">Privacy Policy</a><a href="#status" id="mentorLink">Beta Status</a></div>
       </form>
     </section>
+    <footer class="login-motto">ATTITUDE <i></i> IMPROVE <i></i> GROWTH</footer>
   `;
 		page.querySelector("form").addEventListener("submit", (event) => {
 			event.preventDefault();
@@ -3888,19 +3871,19 @@
 			icon: "upload"
 		},
 		{
-			label: "Macro Intelligence",
+			label: "Macro",
 			labelZh: "宏观情报",
 			page: "Macro",
 			icon: "macro"
 		},
 		{
-			label: "News & Events",
+			label: "News Feed",
 			labelZh: "新闻与事件",
 			page: "Calendar",
 			icon: "calendar"
 		},
 		{
-			label: "Opportunity Scanner",
+			label: "JARVIS Finder",
 			labelZh: "机会扫描",
 			page: "OpportunityScanner",
 			icon: "scanner"
@@ -4113,12 +4096,12 @@
 		const isZh = state.jarvis.language === "zh";
 		side.innerHTML = `
     <div class="brand-lockup approved-brand">
-      <div class="brand-mark">J</div>
-      <div><p>JARVIS</p><span>AI TRADING OS</span></div>
+      <div><p>JARVIS OS</p><span>INSTITUTIONAL ${state.activePage === "Home" ? "EDGE" : "INTELLIGENCE"}</span></div>
       <button class="sidebar-collapse-toggle" type="button" aria-label="${state.approvedUi.sidebarExpanded ? "Collapse" : "Expand"} navigation" aria-expanded="${state.approvedUi.sidebarExpanded}">${lineIcon("menu")}</button>
       <button class="mobile-nav-close" type="button" aria-label="Close navigation">${lineIcon("close")}</button>
     </div>
     <nav class="approved-nav"></nav>
+    <div class="sidebar-cta"><button type="button" data-nav-page="TradePlanner">${lineIcon("planner")}<span>New Trade Plan</span></button></div>
     <div class="sidebar-footer">
       <div class="sidebar-profile">
         <span>${mockUser.name.slice(0, 1).toUpperCase()}</span>
@@ -4148,6 +4131,11 @@
 			toggle?.setAttribute("aria-expanded", String(state.approvedUi.sidebarExpanded));
 			toggle?.setAttribute("aria-label", `${state.approvedUi.sidebarExpanded ? "Collapse" : "Expand"} navigation`);
 		});
+		side.querySelector("[data-nav-page]")?.addEventListener("click", (event) => {
+			state.activePage = event.currentTarget.dataset.navPage;
+			document.body.classList.remove("nav-open");
+			renderFromTop();
+		});
 		const adminSwitch = side.querySelector(".admin-switch");
 		if (adminSwitch) adminSwitch.addEventListener("click", () => {
 			if (!state.isAdminUser) return;
@@ -4166,13 +4154,12 @@
 		const title = pageTitle();
 		const isZh = state.jarvis.language === "zh";
 		bar.innerHTML = `
-    <div class="topbar-title">
-      <p>${state.role === "admin" ? isZh ? "管理工作空间" : "Master Workspace" : isZh ? "AI 交易操作平台" : "AI Trading Operation Platform"}</p>
-      <h2>${title}</h2>
-    </div>
+    <div class="topbar-search">${lineIcon("search")}<span>${isZh ? "搜索市场、资产或日志..." : "Search markets, assets, or logs..."}</span><kbd>CMD+K</kbd></div>
     <div class="topbar-actions">
       <button class="mobile-nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false">${lineIcon("menu")}</button>
-      <span class="premium-badge">Premium</span>
+      <button class="topbar-icon" type="button" aria-label="Notifications">${lineIcon("calendar")}</button>
+      <button class="topbar-icon" type="button" aria-label="Support">${lineIcon("message")}</button>
+      <div class="profile-copy"><strong>${mockUser.name}</strong><small>Connected</small></div>
       <div class="profile-pill" title="${mockUser.name}" aria-label="${mockUser.name}"><span>${mockUser.name.slice(0, 1).toUpperCase()}</span></div>
     </div>
   `;
@@ -4221,33 +4208,16 @@
 			"Find trading opportunities"
 		];
 		return `
-    <section class="approved-workspace workspace-command-center bible-home">
-      <header class="bible-greeting">
-        <p>${timeGreeting()},</p>
-        <h1>${mockUser.name}</h1>
-        <span>${isZh ? "您的 AI 交易操作平台" : "Your AI Trading Operation Platform"}</span>
-      </header>
-      <section class="bible-command-hero">
-        ${approvedCommandBar(isZh ? "向 JARVIS 询问任何市场问题..." : "Ask JARVIS anything...", "home")}
-        <div class="bible-suggestions">
-          <span class="suggestions-label">${isZh ? "试着问" : "Try asking"}</span>
-          ${suggestions.map((item) => `<button type="button" data-quick-prompt="${item}">${item}</button>`).join("")}
-        </div>
-      </section>
-      <section class="bible-live-strip" aria-label="${isZh ? "市场报价" : "Live quotes"}">
-        <div class="live-label"><i></i>${isZh ? "市场" : "LIVE"}</div>
-        ${[
-			"XAUUSD",
-			"EURUSD",
-			"DXY",
-			"BTCUSD",
-			"USOIL"
-		].map((symbol) => `<div class="live-quote"><strong>${symbol}</strong><span>${isZh ? "等待已验证数据" : "Awaiting verified feed"}</span></div>`).join("")}
-      </section>
-      <blockquote class="daily-quote">
-        <p>${isZh ? "“纪律是连接目标与成就的桥梁。”" : "“Discipline is the bridge between goals and accomplishment.”"}</p>
-        <cite>— JARVIS</cite>
-      </blockquote>
+    <section class="approved-workspace workspace-command-center bible-home stitch-workspace">
+      <div class="stitch-home-main">
+        <header class="bible-greeting"><p>${timeGreeting()}, <strong>Commander</strong></p><span>${isZh ? "全球指数显示风险偏好共振。主要资产波动压缩，短期反弹概率上升。" : "Global indices are showing resilience post-NY open. Bond yields are compressing, favoring a short-term rally in risk assets."}</span><div class="greeting-tags"><b>Market Pulse</b><b>Bullish</b></div></header>
+        <section class="liquidity-pulse"><div class="module-head"><div><span>GLOBAL LIQUIDITY PULSE</span><small>REAL-TIME MARKET DEPTH & ORDERFLOW AGGREGATE</small></div><b>REALTIME</b></div><div class="pulse-chart"><i></i><span>BUY-SIDE LIQUIDITY</span><span>OPEN RANGE</span><span>SELL-SIDE LIQUIDITY</span></div></section>
+        <section class="workspace-assets">
+          ${["XAUUSD","BTCUSD"].map((symbol,index)=>`<article><header><span class="asset-symbol">${index?"₿":"◎"}</span><div><strong>${symbol}</strong><small>${index?"BITCOIN / USD":"SPOT GOLD"}</small></div><em>${index?"$72,140":"$2,174.45"}</em></header><div class="asset-spark"></div><footer><span><small>AI BIAS</small><b>${index?"CONSOLIDATING":"STRONG BUY"}</b></span><span><small>CONFIDENCE</small><b>${index?"42%":"88%"}</b></span></footer></article>`).join("")}
+        </section>
+      </div>
+      <aside class="intelligence-pulse"><header><span>✦ INTELLIGENCE<br> PULSE</span><i></i></header>${["Aggressive accumulation detected in EUR/USD at psychological level 1.0920.","US Initial Jobless Claims: 212K vs 215K expected. Neutral market impact.","VIX Index spiking +4.2%. Defensive rotation observed in Treasury yields.","JARVIS has identified a high-probability mean reversion setup for NASDAQ100."].map((item,index)=>`<article><small>09:${12-index*3} EST <b>${index===2?"VOLATILITY":"SIGNAL"}</b></small><p>${item}</p></article>`).join("")}<button type="button" data-nav-page="Calendar">View Full Archive</button></aside>
+      <footer class="workspace-motto">ATTITUDE <i></i> IMPROVE <i></i> GROWTH<small>JARVIS IS 14.8% • SCIENCE OPERATIONAL PLATFORM</small></footer>
     </section>
   `;
 	}
@@ -4426,7 +4396,7 @@
 		return `
     <section class="approved-workspace ai-analysis-page ${isLoading ? "is-loading" : ""}">
       <header class="ai-analysis-head">
-        <div><h1>${isZh ? "AI 分析" : "AI Analysis"}</h1><p>${isZh ? "由 JARVIS 驱动的结构化市场情报。" : "Structured market intelligence powered by JARVIS."}</p></div>
+		<div><span class="stitch-page-kicker">MARKETS / COMMODITIES / ${asset}</span><h1>${isZh ? "AI 分析" : `${asset === "XAUUSD" ? "Gold" : asset} Deep Dive`}</h1><p>${isZh ? "由 JARVIS 驱动的结构化市场情报。" : "Institutional market intelligence, scenario mapping and risk context."}</p></div>
         <div class="ai-analysis-head-actions">
           <div class="analysis-source-meta"><span>${lastUpdated}</span>${status(dataStatus, hasChart ? "info" : "warning")}</div>
           <button class="analysis-refresh-button" id="refreshAiAnalysis" type="button" ${isLoading ? "disabled" : ""} aria-label="${isZh ? "刷新分析" : "Refresh analysis"}">${lineIcon("refresh")}<span>${isLoading ? isZh ? "分析中" : "Analysing" : isZh ? "刷新分析" : "Refresh Analysis"}</span></button>
@@ -4614,6 +4584,15 @@
 			<span>${s8QualityBadge(item.dataQuality)}<small>View Setup</small></span>
 		</button>`;
 	}
+	function s8Price(value, asset) {
+		if (!Number.isFinite(Number(value))) return "Exact level unavailable";
+		const precision = asset === "XAUUSD" ? 2 : asset === "BTCUSD" ? 2 : asset?.includes("JPY") ? 3 : 5;
+		return Number(value).toLocaleString("en-US", { minimumFractionDigits: precision, maximumFractionDigits: precision });
+	}
+	function s8EntryZone(item) {
+		if (!item?.entryZone || !Number.isFinite(Number(item.entryZone.low)) || !Number.isFinite(Number(item.entryZone.high))) return "Exact level unavailable";
+		return `${s8Price(item.entryZone.low, item.asset)} – ${s8Price(item.entryZone.high, item.asset)}`;
+	}
 	function s8ScoreLine(label, key, item) {
 		const maximum = S8_SCORING_WEIGHTS[key];
 		const value = item.components[key] || 0;
@@ -4624,7 +4603,7 @@
 			["Higher timeframe aligned", item.components.trendAlignment >= 15 ? "Confirmed" : item.components.trendAlignment >= 8 ? "Waiting" : "Failed"],
 			["Selected timeframe structure valid", item.components.marketStructure >= 14 ? "Confirmed" : item.components.marketStructure > 0 ? "Waiting" : "Unavailable"],
 			["Liquidity context valid", item.components.liquidityContext >= 10 ? "Confirmed" : item.components.liquidityContext > 0 ? "Waiting" : "Unavailable"],
-			["Entry zone defined", "Unavailable"], ["Invalidation defined", "Unavailable"], ["RR acceptable", "Unavailable"],
+			["Entry zone defined", item.tradePlan ? "Confirmed" : "Unavailable"], ["Invalidation defined", item.tradePlan ? "Confirmed" : "Unavailable"], ["RR acceptable", item.tradePlan ? "Confirmed" : "Unavailable"],
 			["Macro window clear", "Unavailable"], ["News risk clear", "Unavailable"],
 			["Volatility suitable", item.components.volatilitySuitability >= 6 ? "Confirmed" : item.components.volatilitySuitability > 0 ? "Waiting" : "Unavailable"],
 			["Final confirmation complete", item.hardReject ? "Failed" : item.components.setupConfirmation >= 13 ? "Confirmed" : "Waiting"]
@@ -4703,9 +4682,9 @@
 	    <div class="s8-preview-stack">
 	      <article class="s8-panel s8-setup-preview"><div class="s8-section-head"><div><span>SELECTED OPPORTUNITY</span><h2>AI Setup Preview</h2></div>${s8QualityBadge(selected.dataQuality)}</div><div class="s8-preview-title"><div><strong>${selected.asset}</strong><span>${selected.market} · ${selected.timeframe}</span></div>${s8StatusBadge(selected.band + " Setup Quality")}</div><div class="s8-preview-grid">
 	        <span>Setup Type<strong>${selected.setupType}</strong></span><span>Market Bias<strong>${selected.bias}</strong></span><span>Market Mode<strong>${selected.marketMode}</strong></span><span>Trend<strong>${selected.trend}</strong></span><span>Alignment<strong>${selected.alignment}</strong></span><span>Score<strong>${selected.score}/100</strong></span>
-	        <span>Entry Zone<strong>Exact level unavailable</strong></span><span>Stop Loss<strong>Exact level unavailable</strong></span><span>Take Profit 1–3<strong>Exact levels unavailable</strong></span><span>Risk / Reward<strong>Unavailable</strong></span><span>Invalidation<strong>Chart confirmation required</strong></span><span>Confirmation<strong>${selected.confirmation}</strong></span>
+	        <span>Entry Zone<strong>${s8EntryZone(selected)}</strong></span><span>Stop Loss<strong>${s8Price(selected.stopLoss, selected.asset)}</strong></span><span>Take Profit 1–3<strong>${selected.tradePlan ? `${s8Price(selected.takeProfit1, selected.asset)} / ${s8Price(selected.takeProfit2, selected.asset)} / ${s8Price(selected.takeProfit3, selected.asset)}` : "Exact levels unavailable"}</strong></span><span>Risk / Reward<strong>${selected.rr}</strong></span><span>Invalidation<strong>${selected.invalidationContext}</strong></span><span>Confirmation<strong>${selected.confirmation}</strong></span>
 	      </div><div class="s8-preview-note"><p><strong>Main Factor:</strong> ${selected.mainFactor}</p><p><strong>Main Risk:</strong> ${selected.mainRisk}</p><p><strong>Analysis Source:</strong> ${selected.analysisSource || "Deterministic Scanner"} · ${scanner.marketDataTimestamp || "Timestamp unavailable"}</p></div></article>
-	      <article class="s8-panel s8-score-breakdown"><div class="s8-section-head"><div><span>DOCUMENTED WEIGHTS</span><h2>Opportunity Score Breakdown</h2></div><strong>${selected.score}/100</strong></div>${s8ScoreLine("Trend Alignment", "trendAlignment", selected)}${s8ScoreLine("Market Structure", "marketStructure", selected)}${s8ScoreLine("Liquidity Context", "liquidityContext", selected)}${s8ScoreLine("Volatility Suitability", "volatilitySuitability", selected)}${s8ScoreLine("Setup Confirmation", "setupConfirmation", selected)}${s8ScoreLine("Risk / Reward Quality", "riskRewardQuality", selected)}${s8ScoreLine("Macro Risk", "macroRisk", selected)}${s8ScoreLine("News Risk", "newsRisk", selected)}<div class="s8-penalty"><strong>Data completeness: ${selected.dataCompleteness || selected.dataQuality}</strong><span>Missing: ${(selected.missingFactors || ["Risk/Reward", "Macro", "News"]).join(", ")}.</span><span>Penalties: RR 0/10, Macro 0/5, News 0/5${selected.dataQualityPenalty ? `, Data quality -${selected.dataQualityPenalty}` : ""}.</span><span>Hard rejection: ${selected.hardReject ? "Yes · " + selected.rejectionReason : "No"}</span></div></article>
+	      <article class="s8-panel s8-score-breakdown"><div class="s8-section-head"><div><span>DOCUMENTED WEIGHTS</span><h2>Opportunity Score Breakdown</h2></div><strong>${selected.score}/100</strong></div>${s8ScoreLine("Trend Alignment", "trendAlignment", selected)}${s8ScoreLine("Market Structure", "marketStructure", selected)}${s8ScoreLine("Liquidity Context", "liquidityContext", selected)}${s8ScoreLine("Volatility Suitability", "volatilitySuitability", selected)}${s8ScoreLine("Setup Confirmation", "setupConfirmation", selected)}${s8ScoreLine("Risk / Reward Quality", "riskRewardQuality", selected)}${s8ScoreLine("Macro Risk", "macroRisk", selected)}${s8ScoreLine("News Risk", "newsRisk", selected)}<div class="s8-penalty"><strong>Data completeness: ${selected.dataCompleteness || selected.dataQuality}</strong><span>Missing: ${(selected.missingFactors || ["Macro", "News"]).join(", ")}.</span><span>Penalties: ${selected.tradePlan ? "RR verified from deterministic plan" : "RR 0/10"}, Macro 0/5, News 0/5${selected.dataQualityPenalty ? `, Data quality -${selected.dataQualityPenalty}` : ""}.</span><span>Hard rejection: ${selected.hardReject ? "Yes · " + selected.rejectionReason : "No"}</span></div></article>
 	      <article class="s8-panel s8-confirmation"><div class="s8-section-head"><div><span>SCANNER LOGIC</span><h2>Confirmation Checklist</h2></div></div><ul>${s8Checklist(selected)}</ul></article>
 	      <article class="s8-panel s8-risk-context"><div class="s8-section-head"><div><span>CAPITAL PROTECTION</span><h2>Risk Context</h2></div>${s8StatusBadge(selected.hardReject ? "Extreme" : "High")}</div><div class="s8-risk-grid"><span>Market Data Risk<strong>${selected.dataQuality === "Verified" ? "Low" : "High"}</strong></span><span>Structure Risk<strong>${selected.components.marketStructure >= 14 ? "Moderate" : "High"}</strong></span><span>Liquidity Risk<strong>${selected.components.liquidityContext >= 10 ? "Moderate" : "High"}</strong></span><span>Volatility Risk<strong>${selected.risk}</strong></span><span>Macro Risk<strong>Insufficient Data</strong></span><span>News Risk<strong>Insufficient Data</strong></span><span>Execution Risk<strong>High</strong></span><span>Overall Risk<strong>${selected.hardReject ? "Extreme" : "High"}</strong></span></div><p>Opportunity Score supports review; it is not a trading decision. Verify execution conditions, macro and news before acting.</p></article>
 	    </div>
@@ -4823,8 +4802,8 @@
 		const affectedAssets = selected?.assets || [];
 		return `
     <section class="approved-workspace s6-macro-page">
-      <header class="s6-page-head">
-		<div><span class="s6-kicker">MACRO DECISION SUPPORT</span><h1>Macro Intelligence</h1><p>Economic events and market impact interpreted by JARVIS.</p></div>
+	  <header class="s6-page-head">
+		<div><span class="s6-kicker">REAL-TIME INSTITUTIONAL INTELLIGENCE</span><h1>Macro Pulse</h1><p>Real-time institutional intelligence and volatility forecasting for global economic catalysts.</p></div>
 		<div class="s6-head-actions"><div><small>${macroCurrentDate()}</small><span>${macroQualityTag("Unavailable")} Data Source Not Connected</span><small>Last updated: No verified update</small></div><button type="button" id="refreshMacroData" ${macro.isRefreshing ? "disabled" : ""}>${macro.isRefreshing ? "Updating..." : "Refresh Macro Data"}</button></div>
 	  </header>
 
@@ -4934,7 +4913,7 @@
 		return `
     <section class="approved-workspace s7-news-page">
 	  <header class="s7-page-head">
-		<div><span class="s7-kicker">MARKET NEWS INTELLIGENCE</span><h1>News & Events</h1><p>Real-time market developments interpreted by JARVIS.</p></div>
+		<div><span class="s7-kicker">LIVE DATA STREAM</span><h1>Real-Time Terminal</h1><p>Live data stream connected. Analyzing incoming global events.</p></div>
 		<div class="s7-head-actions"><div><span>${newsBadge("Unavailable", "verification")} News Source Not Connected</span><small>Last updated: No verified update</small></div><button type="button" id="refreshNewsData" ${news.isRefreshing ? "disabled" : ""}>${news.isRefreshing ? "Updating..." : "Refresh News"}</button></div>
 	  </header>
 
@@ -5424,6 +5403,9 @@
 	}
 	function bindOpportunityScannerActions(page) {
 		if (!page.querySelector(".s8-scanner-page")) return;
+		if (!state.scannerS8.results.length && state.scannerS8.scanState === "ready" && !state.scannerS8.isScanning && !state.scannerS8.error) {
+			queueMicrotask(() => runS8Scan());
+		}
 		page.querySelectorAll("[data-s8-category]").forEach((button) => {
 			button.addEventListener("click", () => {
 				state.scannerS8.category = button.dataset.s8Category || "All Markets";

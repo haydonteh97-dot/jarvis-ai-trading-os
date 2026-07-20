@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Ask JARVIS | Institutional Intelligence Hub</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Hanken+Grotesk:wght@600;700;900&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-tint": "#4cd6ff",
+                    "on-error-container": "#ffdad6",
+                    "primary-container": "#00d1ff",
+                    "inverse-primary": "#00677f",
+                    "on-tertiary-fixed": "#291800",
+                    "error": "#ffb4ab",
+                    "surface-dim": "#131313",
+                    "on-secondary-fixed": "#23005b",
+                    "surface-glass": "rgba(255, 255, 255, 0.05)",
+                    "surface-container": "#201f1f",
+                    "tertiary-container": "#feb127",
+                    "on-surface": "#e5e2e1",
+                    "on-background": "#e5e2e1",
+                    "primary-fixed": "#b7eaff",
+                    "surface-bright": "#3a3939",
+                    "secondary": "#d1bcff",
+                    "on-secondary-fixed-variant": "#5700c9",
+                    "on-surface-variant": "#bbc9cf",
+                    "on-tertiary-container": "#6b4700",
+                    "secondary-fixed-dim": "#d1bcff",
+                    "on-primary-fixed": "#001f28",
+                    "text-glow": "rgba(164, 230, 255, 0.4)",
+                    "sentiment-bearish": "#FF3B3B",
+                    "inverse-surface": "#e5e2e1",
+                    "on-error": "#690005",
+                    "surface-container-highest": "#353534",
+                    "secondary-container": "#7000ff",
+                    "outline-variant": "#3c494e",
+                    "on-tertiary": "#442b00",
+                    "on-primary": "#003543",
+                    "surface-container-high": "#2a2a2a",
+                    "on-secondary-container": "#ddcdff",
+                    "border-subtle": "rgba(255, 255, 255, 0.1)",
+                    "status-delayed": "#FFB800",
+                    "secondary-fixed": "#e9ddff",
+                    "background": "#131313",
+                    "primary": "#a4e6ff",
+                    "on-primary-container": "#00566a",
+                    "tertiary-fixed": "#ffddb1",
+                    "surface": "#131313",
+                    "surface-container-low": "#1c1b1b",
+                    "inverse-on-surface": "#313030",
+                    "tertiary-fixed-dim": "#ffba49",
+                    "on-primary-fixed-variant": "#004e60",
+                    "error-container": "#93000a",
+                    "sentiment-bullish": "#00FFA3",
+                    "surface-container-lowest": "#0e0e0e",
+                    "on-tertiary-fixed-variant": "#624000",
+                    "primary-fixed-dim": "#4cd6ff",
+                    "on-secondary": "#3c0090",
+                    "surface-variant": "#353534",
+                    "outline": "#859399",
+                    "tertiary": "#ffd59c"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "20px",
+                    "margin-mobile": "16px",
+                    "xl": "64px",
+                    "xs": "8px",
+                    "lg": "40px",
+                    "md": "24px",
+                    "sm": "16px",
+                    "base": "4px"
+            },
+            "fontFamily": {
+                    "caption-sm": ["Inter"],
+                    "data-mono": ["JetBrains Mono"],
+                    "headline-md": ["Hanken Grotesk"],
+                    "display-lg-mobile": ["Hanken Grotesk"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "display-lg": ["Hanken Grotesk"],
+                    "label-xs": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "caption-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "data-mono": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "display-lg-mobile": ["30px", {"lineHeight": "36px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-xs": ["10px", {"lineHeight": "12px", "letterSpacing": "0.1em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #050505;
+            color: #e5e2e1;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
+        }
+        .premium-border {
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .ambient-glow {
+            background: radial-gradient(circle at center, rgba(164, 230, 255, 0.08) 0%, transparent 70%);
+        }
+        .luminous-fill {
+            box-shadow: 0 0 15px rgba(164, 230, 255, 0.3);
+        }
+        .scanline {
+            background: linear-gradient(to bottom, transparent 50%, rgba(164, 230, 255, 0.02) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md">
+<!-- Background Layer -->
+<div class="fixed inset-0 z-[-1] ambient-glow"></div>
+<div class="fixed inset-0 z-[-1] scanline opacity-30"></div>
+
+<!-- Side Navigation (Shared Component) -->
+<aside class="fixed left-0 top-0 h-full w-64 border-r border-border-subtle bg-surface-container-lowest/30 backdrop-blur-3xl flex flex-col py-lg px-sm z-50">
+<div class="mb-lg px-xs">
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface tracking-tighter">JARVIS OS</h1>
+<p class="font-label-xs text-label-xs uppercase tracking-widest text-primary opacity-80">Institutional Grade</p>
+</div>
+<nav class="flex-1 space-y-base">
+<!-- Nav Item: Ask JARVIS (Active) -->
+<a class="flex items-center gap-sm px-sm py-xs text-primary font-bold border-l-2 border-primary bg-primary/5 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">psychology</span>
+<span class="font-label-xs uppercase tracking-widest">Ask JARVIS</span>
+</a>
+<!-- Inactive Items -->
+<a class="flex items-center gap-sm px-sm py-xs text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-xs uppercase tracking-widest">Workspace</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-xs text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-xs uppercase tracking-widest">AI Analysis</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-xs text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">search_insights</span>
+<span class="font-label-xs uppercase tracking-widest">JARVIS Finder</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-xs text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">language</span>
+<span class="font-label-xs uppercase tracking-widest">Macro</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-xs text-on-surface-variant hover:text-on-surface hover:bg-white/5 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">rss_feed</span>
+<span class="font-label-xs uppercase tracking-widest">News Feed</span>
+</a>
+</nav>
+<div class="mt-auto space-y-base pt-lg">
+<button class="w-full py-xs px-sm rounded-lg border border-primary/30 bg-primary/10 text-primary font-label-xs uppercase tracking-widest hover:bg-primary/20 transition-all active:scale-95 mb-md">
+                New Trade Plan
+            </button>
+<a class="flex items-center gap-sm px-sm py-xs text-on-surface-variant hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-xs uppercase tracking-widest">Settings</span>
+</a>
+<a class="flex items-center gap-sm px-sm py-xs text-on-surface-variant hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined">help_center</span>
+<span class="font-label-xs uppercase tracking-widest">Support</span>
+</a>
+</div>
+</aside>
+<!-- Top Navigation (Shared Component) -->
+<header class="fixed top-0 right-0 left-64 h-16 flex items-center justify-between px-xl bg-surface-dim/50 backdrop-blur-xl border-b border-border-subtle z-40">
+<div class="flex items-center gap-md flex-1 max-w-xl">
+<div class="relative w-full group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-primary">search</span>
+<input class="w-full bg-surface-glass border border-border-subtle rounded-full pl-10 pr-12 py-2 text-body-md focus:ring-1 focus:ring-primary/30 focus:border-primary/30 transition-all outline-none" placeholder="Search systems, assets, or logs... (CMD+K)" type="text"/>
+<span class="absolute right-3 top-1/2 -translate-y-1/2 px-2 py-0.5 bg-surface-container-highest rounded text-label-xs font-data-mono opacity-60">⌘K</span>
+</div>
+</div>
+<div class="flex items-center gap-lg">
+<div class="flex items-center gap-sm">
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">sensors</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">speed</span>
+</button>
+</div>
+<div class="flex items-center gap-xs">
+<div class="text-right hidden xl:block">
+<p class="font-label-xs text-on-surface leading-tight">Admin_Sys_01</p>
+<p class="text-[10px] text-sentiment-bullish uppercase tracking-tighter">Connection: Stable</p>
+</div>
+<div class="w-8 h-8 rounded-full border border-primary/40 p-0.5">
+<img class="w-full h-full rounded-full object-cover" data-alt="A futuristic professional portrait of a tech-savvy institutional trader in a high-tech dark environment, illuminated by soft blue cinematic lighting reflecting off glass surfaces, with subtle holographic interfaces blurred in the background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkYGAm_f3EMFqNO15fgcOIp758eptdiB4E4-ayRxk4qQw8W96jt_Uj4qj2qRguqB6O5HaEd5i5x6oB0LF7SBJYyEb2rj0AK9LJu0q0Fw8d00UfARCZHS2t7eSN6Ibd4hovJp-OLmkij2u1ToJv9mNF-UU71Uk4d_yXxDtR9wHJx-CabSuUZaqFbz7XSiq2SmGdRjm6HXdpQ15FNU93Ska2lzmxRCj_wSusCiLCDNw8v7a2F8GR6SkUHIGe3YHNfhy7RgFdlfLrSQI"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 mt-16 p-xl min-h-screen flex flex-col items-center">
+<!-- Intelligence Greeting -->
+<div class="w-full max-w-4xl mb-lg">
+<div class="flex items-center gap-sm mb-xs">
+<div class="w-1.5 h-6 bg-primary rounded-full luminous-fill"></div>
+<h2 class="font-headline-md text-headline-md tracking-tight">Intelligence Terminal</h2>
+</div>
+<p class="text-on-surface-variant max-w-2xl">JARVIS system online. Ready for complex cross-asset analysis, risk modeling, and trade strategy refinement.</p>
+</div>
+<!-- Chat History Area -->
+<div class="w-full max-w-4xl flex-1 flex flex-col gap-lg mb-xl pb-24">
+<!-- User Prompt -->
+<div class="flex gap-md self-end max-w-[80%]">
+<div class="glass-panel premium-border p-md rounded-xl rounded-tr-none">
+<p class="text-on-surface font-body-md">Analyze current XAUUSD price action. I need a scalp setup for the London open with specific entry and risk levels based on the latest CPI volatility.</p>
+</div>
+<div class="w-8 h-8 rounded-lg bg-surface-container-highest flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-xs">person</span>
+</div>
+</div>
+<!-- JARVIS Response -->
+<div class="flex gap-md max-w-[95%]">
+<div class="w-10 h-10 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">psychology</span>
+</div>
+<div class="flex-1 space-y-md">
+<div class="glass-panel premium-border p-lg rounded-xl rounded-tl-none space-y-md">
+<p class="text-on-surface-variant">Scanning global liquidity pools and volatility clusters... <span class="text-primary">Analysis Complete.</span></p>
+<p class="text-on-surface">Based on the post-CPI retracement and current volume profiles, Gold (XAUUSD) is showing a strong 'Buy' liquidity hunt near the $2,034 handle. Expecting a volatility expansion during the London session.</p>
+<!-- Nested Data Cards (Bento Style) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-sm pt-xs">
+<div class="glass-panel p-sm border-l-2 border-primary-container bg-primary/5">
+<p class="font-label-xs text-primary mb-xs">ENTRY NODE</p>
+<p class="font-data-mono text-xl">$2,034.50</p>
+<p class="text-[10px] text-on-surface-variant opacity-60">Pending Limit</p>
+</div>
+<div class="glass-panel p-sm border-l-2 border-sentiment-bearish bg-sentiment-bearish/5">
+<p class="font-label-xs text-sentiment-bearish mb-xs">STOP LOSS</p>
+<p class="font-data-mono text-xl">$2,028.15</p>
+<p class="text-[10px] text-on-surface-variant opacity-60">Below Range Low</p>
+</div>
+<div class="glass-panel p-sm border-l-2 border-sentiment-bullish bg-sentiment-bullish/5">
+<p class="font-label-xs text-sentiment-bullish mb-xs">TAKE PROFIT</p>
+<p class="font-data-mono text-xl">$2,048.90</p>
+<p class="text-[10px] text-on-surface-variant opacity-60">Mid-term FVG</p>
+</div>
+</div>
+<div class="flex items-center gap-xs text-[12px] pt-xs">
+<span class="w-2 h-2 rounded-full bg-sentiment-bullish animate-pulse"></span>
+<span class="text-on-surface-variant uppercase font-label-xs">Risk/Reward Ratio: 1:2.4 | Probability: 68%</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Sticky Interaction Zone -->
+<div class="fixed bottom-0 left-64 right-0 pb-md pt-lg bg-gradient-to-t from-background via-background/90 to-transparent z-30">
+<div class="max-w-4xl mx-auto w-full px-lg">
+<!-- Quick Actions -->
+<div class="flex flex-wrap gap-sm mb-md justify-center">
+<button class="px-sm py-1.5 glass-panel rounded-full text-label-xs uppercase tracking-widest text-on-surface-variant hover:border-primary/40 hover:text-primary transition-all flex items-center gap-xs">
+<span class="material-symbols-outlined text-sm">trending_up</span> Analyse Gold
+                    </button>
+<button class="px-sm py-1.5 glass-panel rounded-full text-label-xs uppercase tracking-widest text-on-surface-variant hover:border-primary/40 hover:text-primary transition-all flex items-center gap-xs">
+<span class="material-symbols-outlined text-sm">security</span> Risk Check
+                    </button>
+<button class="px-sm py-1.5 glass-panel rounded-full text-label-xs uppercase tracking-widest text-on-surface-variant hover:border-primary/40 hover:text-primary transition-all flex items-center gap-xs">
+<span class="material-symbols-outlined text-sm">public</span> Macro Summary
+                    </button>
+<button class="px-sm py-1.5 glass-panel rounded-full text-label-xs uppercase tracking-widest text-on-surface-variant hover:border-primary/40 hover:text-primary transition-all flex items-center gap-xs">
+<span class="material-symbols-outlined text-sm">history</span> Sentiment Backtest
+                    </button>
+</div>
+<!-- Chat Input -->
+<div class="glass-panel premium-border p-base rounded-2xl flex items-end gap-sm ring-1 ring-white/5 focus-within:ring-primary/20 transition-all">
+<button class="p-sm text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">attach_file</span>
+</button>
+<textarea class="flex-1 bg-transparent border-none focus:ring-0 text-body-md py-sm resize-none" placeholder="Inquire for deeper insights or execute commands..." rows="1" style="max-height: 200px;"></textarea>
+<button class="m-1 p-sm bg-primary/10 border border-primary/30 rounded-xl text-primary hover:bg-primary/20 transition-all active:scale-95">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">send</span>
+</button>
+</div>
+<!-- Suggested Follow-ups -->
+<div class="flex gap-md justify-center mt-sm">
+<button class="text-label-xs text-primary/60 hover:text-primary transition-colors">Compare with DXY Correlation?</button>
+<span class="text-white/10">•</span>
+<button class="text-label-xs text-primary/60 hover:text-primary transition-colors">Export setup to TradingView?</button>
+<span class="text-white/10">•</span>
+<button class="text-label-xs text-primary/60 hover:text-primary transition-colors">Monitor news flow for XAU?</button>
+</div>
+</div>
+</div>
+<!-- Right Float Market Context (Responsive hide on smaller screens) -->
+<aside class="fixed right-lg top-24 w-64 hidden xl:block space-y-md">
+<div class="glass-panel premium-border p-md rounded-xl">
+<div class="flex justify-between items-start mb-md">
+<div>
+<h4 class="font-label-xs text-on-surface-variant">MARKET CONTEXT</h4>
+<p class="font-headline-md text-headline-md tracking-tighter">XAU/USD</p>
+</div>
+<div class="px-2 py-0.5 bg-sentiment-bullish/10 text-sentiment-bullish rounded font-label-xs">+0.42%</div>
+</div>
+<div class="space-y-sm">
+<div class="flex justify-between font-data-mono text-sm">
+<span class="text-on-surface-variant">BID</span>
+<span class="text-on-surface">2036.42</span>
+</div>
+<div class="flex justify-between font-data-mono text-sm">
+<span class="text-on-surface-variant">ASK</span>
+<span class="text-on-surface">2036.58</span>
+</div>
+<div class="h-[2px] bg-white/5 w-full rounded-full overflow-hidden">
+<div class="h-full bg-primary luminous-fill w-3/4"></div>
+</div>
+<p class="text-[10px] text-on-surface-variant text-center uppercase tracking-widest">Bullish Bias (Active)</p>
+</div>
+</div>
+<div class="glass-panel p-md rounded-xl space-y-sm opacity-60">
+<h4 class="font-label-xs text-on-surface-variant uppercase">Related Signals</h4>
+<div class="flex items-center gap-xs">
+<span class="w-1 h-1 rounded-full bg-status-delayed"></span>
+<p class="text-caption-sm">DXY: Support Test at 104.10</p>
+</div>
+<div class="flex items-center gap-xs">
+<span class="w-1 h-1 rounded-full bg-sentiment-bearish"></span>
+<p class="text-caption-sm">US10Y: Yield Expansion Peak</p>
+</div>
+</div>
+</aside>
+</main>
+<!-- Micro-interaction Scripts -->
+<script>
+        // Auto-resize textarea
+        const tx = document.getElementsByTagName("textarea");
+        for (let i = 0; i < tx.length; i++) {
+          tx[i].setAttribute("style", "height:" + (tx[i].scrollHeight) + "px;overflow-y:hidden;");
+          tx[i].addEventListener("input", OnInput, false);
+        }
+        function OnInput() {
+          this.style.height = 0;
+          this.style.height = (this.scrollHeight) + "px";
+        }
+    </script>
+</body></html>
